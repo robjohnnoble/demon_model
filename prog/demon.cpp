@@ -2959,7 +2959,7 @@ void check_clone_populations(int chosen_clone, int event_type, int parent_deme_n
 
 void check_normal_pops(int deme_index)
 {
-	if(isinf(deme_ints[NORMAL_CELLS][deme_index])) {
+	if(deme_ints[NORMAL_CELLS][deme_index] > DBL_MAX) {
 		printf("Normal cell count is infinite\n");
 		fprintf(error_log, "Normal cell count is infinite\n");
 		exit_code = 1;
