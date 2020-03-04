@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <iostream>
 #include <string>
+#include <cfloat>
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
