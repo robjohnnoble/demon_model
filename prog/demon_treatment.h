@@ -27,9 +27,10 @@
 #define max_grid_for_output 523
 
 ///// options for main_calculations_and_output function:
-#define PHYLO_AND_POPS 1
-#define DIVERSITIES 2
-#define GENOPROPS 4
+#define POPS 1
+#define PHYLO 2
+#define DIVERSITIES 4
+#define GENOPROPS 8
 
 ///// event types (for event_type variable and event_counter array):
 #define BIRTH_EVENT 0
@@ -140,6 +141,8 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 	int *empty_cols, int *num_clones, int parent_driver_geno_num, int *num_empty_driver_cols, int *num_driver_matrix_cols, int *empty_driver_cols, 
 	int *next_driver_genotype_id, int num_demes, int *next_genotype_id, int *num_extinct_genotypes, int *num_empty_demes, 
 	int *num_extinct_driver_genotypes, float gens_elapsed);
+void treatment(int *num_cells, int *empty_cols, int *num_empty_cols, int *num_clones, int *num_empty_driver_cols, int *empty_driver_cols, int num_demes, int *num_extinct_genotypes, 
+	int *num_empty_demes, int *num_extinct_driver_genotypes);
 void cell_death(int *event_counter, int *num_cells, int parent_deme_num, int parent_geno_num, int *empty_cols, int *num_empty_cols,
 	int chosen_clone, int *num_clones, int parent_driver_geno_num, int *num_empty_driver_cols, int *empty_driver_cols, int num_demes, 
 	int *num_extinct_genotypes, int *num_empty_demes, int *num_extinct_driver_genotypes);
@@ -184,7 +187,7 @@ void open_files(char *input_and_output_path);
 void initiate_files(int *num_samples_list);
 void main_calculations_and_output(long *idum, int num_demes, int num_matrix_cols, int num_driver_matrix_cols, float gens_elapsed, int *driver_counts, int num_cells, int num_clones, 
 	int record_phylogenies, int *num_samples_list, int next_genotype_id, int next_driver_genotype_id, int *event_counter, int num_empty_cols, int num_empty_driver_cols, int num_extinct_genotypes, 
-	int num_extinct_driver_genotypes, int num_empty_demes, long t1, int print_output, int which_parts);
+	int num_extinct_driver_genotypes, int num_empty_demes, long t1, int print_output, int which_parts, int treated);
 void grids_output(char *preamble_text, char *preamble_drivers_text, char *preamble_passengers_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, 
 	char *buffer_text_short, char *buffer_text_long, bool to_file);
 void end_of_loop_output(int num_cells, float gens_elapsed, long t1);
@@ -197,13 +200,13 @@ void print_to_screen(float gens_elapsed, int num_cells, long t1, int num_demes, 
 	double sum_normal_death_rates, double sum_normal_birth_rates, float edge_diversity, int num_empty_driver_cols, int num_empty_demes, int num_extinct_genotypes, int num_extinct_driver_genotypes, int next_genotype_id);
 void write_output_pops(FILE *output_pops, int num_cells, int *event_counter, float mean_num_passengers, float mean_num_drivers, double sum_birth_rates, double sum_migration_rates, 
 	float var_num_passengers, float var_num_drivers, float variance_birth_rate, float variance_mig_rate, int num_matrix_cols, int num_empty_cols, int num_driver_matrix_cols, int num_empty_driver_cols, 
-	int num_extinct_genotypes, int num_extinct_driver_genotypes, int num_demes, int num_empty_demes, float gens_elapsed, int num_clones, int *driver_counts, int next_genotype_id);
+	int num_extinct_genotypes, int num_extinct_driver_genotypes, int num_demes, int num_empty_demes, float gens_elapsed, int num_clones, int *driver_counts, int next_genotype_id, int treated);
 void write_diversities(FILE *output_diversities, float diversity, float alpha_diversity, float edge_diversity, float driver_diversity, float alpha_driver_diversity, float edge_driver_diversity, 
-	float **depth_diversity, float **depth_diversity_bigsample, float gens_elapsed, int num_cells);
+	float **depth_diversity, float **depth_diversity_bigsample, float gens_elapsed, int num_cells, int treated);
 void write_other_files(FILE *output_demes, FILE *output_clones, FILE *output_genotype_counts, FILE *output_driver_genotype_counts, FILE *output_phylo, float gens_elapsed, 
-	int num_demes, int num_matrix_cols, int num_driver_matrix_cols, int num_clones, float *within_deme_diversity, float *within_deme_driver_diversity, int num_cells);
+	int num_demes, int num_matrix_cols, int num_driver_matrix_cols, int num_clones, float *within_deme_diversity, float *within_deme_driver_diversity, int num_cells, int treated);
 void write_output_phylo(FILE* output, int num_cols, float gens_elapsed, int *populations, int **genotype_or_driver_ints, float **genotype_or_driver_floats, 
-	int samples, int biopsy_size_per_sample, int depth, int num_cells);
+	int samples, int biopsy_size_per_sample, int depth, int num_cells, int treated);
 void write_frequency_table(FILE *output_allele_counts, int **freq_table, int num_cells, float gens_elapsed, int num_freqs);
 void write_genotypes(FILE *output_genotype_properties, int num_matrix_cols, int *allele_count, int **genotype_or_driver_ints, float **genotype_or_driver_floats);
 void write_matrix_to_file(FILE *output_matrix, int **either_matrix, int num_matrix_cols);
@@ -269,7 +272,7 @@ void get_diversity_metrics(int rao, float *diversity, float *edge_diversity, flo
 	int *clone_genotype, int **either_matrix, int dmax, int *populations, long *idum, float gens_elapsed, int* position_in_edge_list, int* demes_at_edge, int* sides_at_edge, int* genotype_edge_pop, int is_drivers_only);
 void get_biopsy_data(int rao, float *depth_array, int samples, int biopsy_size_per_sample, int num_demes, int num_cells, int num_matrix_cols, int num_clones, int *clone_genotype, int **either_matrix, 
 	int dmax, long *idum, FILE *sample_size_log, float gens_elapsed, FILE *output_phylo_of_sample, int calculate_sample_diversities, int record_phylogenies, float centre_X, float centre_Y, 
-	int **genotype_or_driver_ints, float **genotype_or_driver_floats, int *at_edge);
+	int **genotype_or_driver_ints, float **genotype_or_driver_floats, int *at_edge, int treated);
 void calculate_mutation_metrics(float *mean_num_passengers, float *mean_num_drivers, float *var_num_passengers, float *var_num_drivers, int *driver_counts, int num_matrix_cols, int num_cells);
 float calculate_variance_of_rate(int num_matrix_cols, int num_cells, double sum_of_rates, float *list_of_rates);
 void get_relatives(int num_matrix_cols, int next_genotype_id, int **geno_or_driver_ints);

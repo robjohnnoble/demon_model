@@ -144,6 +144,7 @@ void read_parameters(boost::property_tree::ptree pt)
 	float buff;
 	float max_driver_mu;
 	float predicted_clones_per_deme;
+	long long_seed;
 
 	// spatial parameters:
 	log2_deme_carrying_capacity = pt.get <int> ("parameters.spatial_structure.log2_deme_carrying_capacity"); // log2 of deme carrying capacity
@@ -187,6 +188,9 @@ void read_parameters(boost::property_tree::ptree pt)
 	matrix_max = pt.get <int> ("parameters.non_biological_parameters.matrix_max"); // maximum number of matrix columns (for assigning memory)
 
 	K = pow(2, log2_deme_carrying_capacity); // deme carrying capacity
+
+	long_seed = -(long(seed) + 1);
+	s_driver_birth = 0.05 + 0.15 * ran1(&long_seed);
 
 	if(mu_driver_birth < 0) mu_driver_birth = pow(10, mu_driver_birth);
 	if(mu_driver_migration < 0) mu_driver_migration = pow(10, mu_driver_migration);
