@@ -249,7 +249,7 @@ void read_parameters(boost::property_tree::ptree pt)
 	else max_driver_genotypes = matrix_max;
 	max_driver_genotypes = MAX(max_driver_genotypes, 10);
 
-	predicted_clones_per_deme = MIN(ceil(K * MAX(max_driver_mu, mu_passenger) * 400), K);
+	predicted_clones_per_deme = MAX(MIN(ceil(K * MAX(max_driver_mu, mu_passenger) * 400), K), 1);
 
 	max_clones = MIN(MAX(max_genotypes, max_demes * predicted_clones_per_deme), max_pop);
 
