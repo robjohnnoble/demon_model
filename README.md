@@ -25,7 +25,7 @@ Spatial structure
 
 Dispersal
 * `float migration_type`: type of cell dispersal (0 = invasion; 2 = deme fission)
-* `float init_migration_rate`: initial invasion rate or deme fission rate
+* `float init_migration_rate`: initial invasion rate or deme fission rate (-1 = set automatically)
 * `int migration_edge_only`: whether dispersal is limited to the tumour boundary (0 = no; 1 = yes)
 * `int migration_rate_scales_with_K`: whether to divide dispersal rates by the square root of the deme carrying capacity (0 = no; 1= yes)
 
