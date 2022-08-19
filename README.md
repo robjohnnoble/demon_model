@@ -7,14 +7,20 @@ The program is written in C++ (mostly plain C); it requires gnuplot and the Boos
 
 ## Running a simulation
 
-Copy the following three files into a folder:
+Copy the following three files into a new folder:
 
-* `demon.cpp` (model code);
-* `demon.h` (header file);
-* `init_conf_file.dat` (configuration file);
-* `compile_execute.sh` (shell script to compile and execute the model).
+* `src/demon.cpp` (model code);
+* `src/demon.h` (header file);
+* `resources/configfile-example.dat` (configuration file);
 
-In a terminal window, navigate to your folder and type `./compile_execute.sh`.
+In a terminal window, navigate to your folder and type the following commands:
+```
+# 1) Compilation
+g++ -o demon demon.cpp -I/usr/local/include/boost/ -lm
+
+# 2) Execution
+./demon  ./ configfile-example.dat
+```
 
 ## Configuration file
 
