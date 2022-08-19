@@ -28,13 +28,12 @@ jobs:
         run: which g++
 
       - name: Prepare testrun directory
-        run: >
+        run: |
             mkdir testrun
             cp resources/configfile-example.dat testrun/config.dat
 
       - name: Compile demon
-        run: >
-            g++ -o testrun/demon src/demon.cpp -I/usr/local/include/boost/ -lm
+        run: g++ -o testrun/demon src/demon.cpp -I/usr/local/include/boost/ -lm
 
       - name: Testrun
         run: ./testrun/demon testrun testrun/config.dat
