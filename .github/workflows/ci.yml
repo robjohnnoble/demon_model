@@ -1,0 +1,42 @@
+###############################################################################
+#
+#   AUTHOR: Maciej_Bak
+#   CONTACT: wsciekly.maciek@gmail.com
+#   CREATED: 15-08-2022
+#   LICENSE: Apache_2.0
+#
+###############################################################################
+---
+name: ci
+
+on: push
+
+jobs:
+
+  testrun:
+    runs-on: ubuntu-20.04
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install Boost lib.
+        run: sudo apt-get install libboost-all-dev
+
+      - name: Print compiler path
+        run: which g++
+
+      - name: Prepare testrun directory
+        run: >
+            mkdir testrun
+            cp resources/configfile-example.dat testrun/config.dat
+
+      - name: Compile demon
+        run: >
+            g++ -o testrun/demon src/demon.cpp -I/usr/local/include/boost/ -lm
+
+      - name: Testrun
+        run: ./testrun/demon testrun testrun/config.dat
+
+...
