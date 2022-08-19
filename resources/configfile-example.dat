@@ -2,7 +2,7 @@ parameters
 {
     spatial_structure
     {
-        log2_deme_carrying_capacity 9
+        log2_deme_carrying_capacity 7
     }
     dispersal
     {
@@ -14,8 +14,8 @@ parameters
     mutation_rates
     {
         mu_driver_birth 1e-05
-        mu_passenger 0.1
-        mu_driver_migration 0
+        mu_passenger 0.01
+        mu_driver_migration 0.01
         passenger_pop_threshold -1
     }
     fitness_effects
