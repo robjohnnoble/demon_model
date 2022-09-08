@@ -334,6 +334,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	genotype_floats[BIRTH_RATE][0] = set_birth_rate(init_driver_birth_mutations, init_passengers, 1.0, idum);
 	genotype_floats[MIGRATION_RATE][0] = set_migration_rate(init_driver_mig_mutations, init_migration_rate, idum);
 	genotype_floats[ORIGIN_TIME][0] = 0; // generation at which genotype originated
+	genotype_floats[THRESHOLD_TIME][0] = -1; // generation at which genotype population exceeded minimum threshold
 
 	// driver genotypes:
 	driver_genotype_ints[POPULATION][0] = init_pop;
@@ -349,6 +350,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	driver_genotype_floats[BIRTH_RATE][0] = genotype_floats[BIRTH_RATE][0];
 	driver_genotype_floats[MIGRATION_RATE][0] = genotype_floats[MIGRATION_RATE][0];
 	driver_genotype_floats[ORIGIN_TIME][0] = 0; // generation at which genotype originated
+	driver_genotype_floats[THRESHOLD_TIME][0] = -1; // generation at which genotype population exceeded minimum threshold
 
 	// demes:
 	remaining_pop = init_pop;
@@ -630,7 +632,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 						// migration may be attempted, depdending on the genotype's migration rate:
 						if(ran1(&idum) < genotype_floats[MIGRATION_RATE][daughter_geno_num]) cell_migration(event_counter, parent_deme_num, &idum, &num_demes, &num_clones, 
 							chosen_clone, &num_cells, daughter_geno_num, daughter_driver_geno_num, &num_empty_demes, empty_cols, &num_empty_cols, &num_empty_driver_cols, empty_driver_cols, 
-							&num_extinct_genotypes, &num_extinct_driver_genotypes);
+							&num_extinct_genotypes, &num_extinct_driver_genotypes, gens_elapsed);
 						// error check:
 						check_clone_populations(chosen_clone, event_type, parent_deme_num);
 						if(exit_code != 0) break;
@@ -638,21 +640,21 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 					// attempted deme fission:
 					else if(migration_type == 2 && deme_ints[POPULATION][parent_deme_num] + deme_ints[NORMAL_CELLS][parent_deme_num] >=K && 
 						ran1(&idum) < deme_doubles[SUM_MIGRATION_RATES][parent_deme_num]) deme_fission(event_counter, parent_deme_num, &idum, &num_demes, &num_clones, 
-						&num_cells, &num_empty_demes, &num_empty_cols, &num_empty_driver_cols, empty_cols, empty_driver_cols, &num_extinct_genotypes, &num_extinct_driver_genotypes, num_matrix_cols);
+						&num_cells, &num_empty_demes, &num_empty_cols, &num_empty_driver_cols, empty_cols, empty_driver_cols, &num_extinct_genotypes, &num_extinct_driver_genotypes, num_matrix_cols, gens_elapsed);
 					// error check:
 					check_geno_populations(chosen_clone, event_type);
 				}
 				
 				// cell death:
 				else if(event_type == DEATH_EVENT) cell_death(event_counter, &num_cells, parent_deme_num, parent_geno_num, empty_cols, &num_empty_cols, chosen_clone, &num_clones, 
-					parent_driver_geno_num, &num_empty_driver_cols, empty_driver_cols, num_demes, &num_extinct_genotypes, &num_empty_demes, &num_extinct_driver_genotypes);
+					parent_driver_geno_num, &num_empty_driver_cols, empty_driver_cols, num_demes, &num_extinct_genotypes, &num_empty_demes, &num_extinct_driver_genotypes, gens_elapsed);
 				
 				// cell migration or deme fission:
 				else if(deme_ints[POPULATION][parent_deme_num] > 1) {
 					if(migration_type == 1) cell_migration(event_counter, parent_deme_num, &idum, &num_demes, &num_clones, chosen_clone, &num_cells, parent_geno_num, parent_driver_geno_num, &num_empty_demes, 
-						empty_cols, &num_empty_cols, &num_empty_driver_cols, empty_driver_cols, &num_extinct_genotypes, &num_extinct_driver_genotypes);
+						empty_cols, &num_empty_cols, &num_empty_driver_cols, empty_driver_cols, &num_extinct_genotypes, &num_extinct_driver_genotypes, gens_elapsed);
 					else if(deme_ints[POPULATION][parent_deme_num] + deme_ints[NORMAL_CELLS][parent_deme_num] >=K) deme_fission(event_counter, parent_deme_num, &idum, &num_demes, &num_clones, &num_cells, &num_empty_demes, 
-						&num_empty_cols, &num_empty_driver_cols, empty_cols, empty_driver_cols, &num_extinct_genotypes, &num_extinct_driver_genotypes, num_matrix_cols);
+						&num_empty_cols, &num_empty_driver_cols, empty_cols, empty_driver_cols, &num_extinct_genotypes, &num_extinct_driver_genotypes, num_matrix_cols, gens_elapsed);
 				}
 
 				// error check:
@@ -687,7 +689,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 
 		end_of_loop_output(num_cells, gens_elapsed, t1);
 
-		if(num_cells >= MIN(20, max_pop) || filled_grid) break;
+		if(num_cells >= MIN(10, max_pop) || filled_grid) break;
 	}
 
 	if(num_cells > 0) {
@@ -900,13 +902,20 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 	increment_or_decrement_deme(1, parent_deme_num, *num_cells, num_demes, num_empty_demes);
 
 	// choose numbers of mutations of each type:
-	choose_number_mutations(new_passengers, new_mig_mutations, new_birth_mutations, new_mutations, idum);
+	choose_number_mutations(new_passengers, new_mig_mutations, new_birth_mutations, new_mutations, idum, driver_genotype_ints[NUM_DRIVER_MUTATIONS][parent_driver_geno_num]);
+
+	// if(gens_elapsed > 822 && gens_elapsed < 823) {
+	// 	printf("********\n");
+	// 	printf("gen %f; parent = %d; NUM_DRIVER_MUTATIONS = %d\n",gens_elapsed, driver_genotype_ints[IDENTITY][parent_driver_geno_num], driver_genotype_ints[NUM_DRIVER_MUTATIONS][parent_driver_geno_num]);
+	// 	printf("Mutation counts %d, %d\n", new_mutations[0], new_mutations[1]);
+	// 	printf("********\n");
+	// }
 
 	// if no new mutations then simply increment parent clone, genotype, and driver genotype populations:
 	if(!(new_mutations[0]) && !(new_mutations[1])) {
 		increment_or_decrement_clone(parent_clone, parent_deme_num, num_clones, +1, num_demes);
-		increment_or_decrement_genotype(genotype_ints, parent_geno_num, empty_cols, num_empty_cols, +1, num_extinct_genotypes);
-		increment_or_decrement_genotype(driver_genotype_ints, parent_driver_geno_num, empty_driver_cols, num_empty_driver_cols, +1, num_extinct_driver_genotypes);
+		increment_or_decrement_genotype(genotype_ints, genotype_floats, parent_geno_num, empty_cols, num_empty_cols, +1, num_extinct_genotypes, gens_elapsed);
+		increment_or_decrement_genotype(driver_genotype_ints, driver_genotype_floats, parent_driver_geno_num, empty_driver_cols, num_empty_driver_cols, +1, num_extinct_driver_genotypes, gens_elapsed);
 		daughter_geno_num = parent_geno_num;
 		daughter_driver_geno_num = parent_driver_geno_num;
 	}
@@ -958,12 +967,12 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 		// if both daughters have only passenger mutations then daughter is added to parent's driver genotype:
 		if(!(new_birth_mutations[0] + new_mig_mutations[0]) && !(new_birth_mutations[1] + new_mig_mutations[1])) driver_genotype_ints[POPULATION][parent_driver_geno_num]++;
 		// if both daughters have driver mutations then decrement parent's driver genotype:
-		else if(new_birth_mutations[0] + new_mig_mutations[0] > 0 && new_birth_mutations[1] + new_mig_mutations[1] > 0) increment_or_decrement_genotype(driver_genotype_ints, 
-			parent_driver_geno_num, empty_driver_cols, num_empty_driver_cols, -1, num_extinct_driver_genotypes);
+		else if(new_birth_mutations[0] + new_mig_mutations[0] > 0 && new_birth_mutations[1] + new_mig_mutations[1] > 0) increment_or_decrement_genotype(driver_genotype_ints, driver_genotype_floats,
+			parent_driver_geno_num, empty_driver_cols, num_empty_driver_cols, -1, num_extinct_driver_genotypes, gens_elapsed);
 			
 		// if both daughters have mutations then remove parent from genotype and clone:
 		if(new_mutations[0] && new_mutations[1]) {
-			increment_or_decrement_genotype(genotype_ints, parent_geno_num, empty_cols, num_empty_cols, -1, num_extinct_genotypes);
+			increment_or_decrement_genotype(genotype_ints, genotype_floats, parent_geno_num, empty_cols, num_empty_cols, -1, num_extinct_genotypes, gens_elapsed);
 			if(clone_ints[POPULATION][parent_clone] == 1) daughter_clone_nums[1] = parent_clone; // parent clone is about to go extinct and its clone number will be reassigned to its daughter
 			increment_or_decrement_clone(parent_clone, parent_deme_num, num_clones, -1, num_demes);
 		}
@@ -976,15 +985,15 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 
 // death of a cancer cell:
 void cell_death(int *event_counter, int *num_cells, int parent_deme_num, int parent_geno_num, int *empty_cols, int *num_empty_cols, int chosen_clone, int *num_clones, int parent_driver_geno_num, 
-	int *num_empty_driver_cols, int *empty_driver_cols, int num_demes, int *num_extinct_genotypes, int *num_empty_demes, int *num_extinct_driver_genotypes)
+	int *num_empty_driver_cols, int *empty_driver_cols, int num_demes, int *num_extinct_genotypes, int *num_empty_demes, int *num_extinct_driver_genotypes, float gens_elapsed)
 {
 	event_counter[DEATH_EVENT]++;
 
 	// remove from cell count, deme, and genotype:
 	*num_cells = *num_cells - 1;
 	increment_or_decrement_deme(-1, parent_deme_num, *num_cells, num_demes, num_empty_demes);
-	increment_or_decrement_genotype(genotype_ints, parent_geno_num, empty_cols, num_empty_cols, -1, num_extinct_genotypes);
-	increment_or_decrement_genotype(driver_genotype_ints, parent_driver_geno_num, empty_driver_cols, num_empty_driver_cols, -1, num_extinct_driver_genotypes);
+	increment_or_decrement_genotype(genotype_ints, genotype_floats, parent_geno_num, empty_cols, num_empty_cols, -1, num_extinct_genotypes, gens_elapsed);
+	increment_or_decrement_genotype(driver_genotype_ints, driver_genotype_floats, parent_driver_geno_num, empty_driver_cols, num_empty_driver_cols, -1, num_extinct_driver_genotypes, gens_elapsed);
 
 	// remove from old clone, and update deme and bintree sums of rates:
 	increment_or_decrement_clone(chosen_clone, parent_deme_num, num_clones, -1, num_demes);
@@ -993,7 +1002,7 @@ void cell_death(int *event_counter, int *num_cells, int parent_deme_num, int par
 // migration of a cancer cell:
 void cell_migration(int *event_counter, int origin_deme_num, long *idum, int *num_demes, int *num_clones, int clone_num, int *num_cells,
 	int geno_num, int driver_geno_num, int *num_empty_demes, int *empty_cols, int *num_empty_cols, int *num_empty_driver_cols, int *empty_driver_cols, 
-	int *num_extinct_genotypes, int *num_extinct_driver_genotypes)
+	int *num_extinct_genotypes, int *num_extinct_driver_genotypes, float gens_elapsed)
 {
 	int new_deme_num;
 	int existing_clone_index;
@@ -1012,7 +1021,7 @@ void cell_migration(int *event_counter, int origin_deme_num, long *idum, int *nu
 		}
 		else if(filled_grid) {
 			cell_death(event_counter, num_cells, origin_deme_num, geno_num, empty_cols, num_empty_cols, clone_num, num_clones, driver_geno_num, 
-				num_empty_driver_cols, empty_driver_cols, *num_demes, num_extinct_genotypes, num_empty_demes, num_extinct_driver_genotypes);
+				num_empty_driver_cols, empty_driver_cols, *num_demes, num_extinct_genotypes, num_empty_demes, num_extinct_driver_genotypes, gens_elapsed);
 			return;
 		}
 	}
@@ -1057,7 +1066,7 @@ void cell_migration(int *event_counter, int origin_deme_num, long *idum, int *nu
 
 // fission of a deme:
 void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_demes, int *num_clones, int *num_cells, int *num_empty_demes, int *num_empty_cols, int *num_empty_driver_cols, 
-	int *empty_cols, int *empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int num_matrix_cols)
+	int *empty_cols, int *empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int num_matrix_cols, float gens_elapsed)
 {
 	int new_deme_index = *num_demes;
 	int old_x = deme_ints[XCOORD][origin_deme_num], old_y = deme_ints[YCOORD][origin_deme_num];
@@ -1083,7 +1092,7 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 			else {
 				if(origin_deme_num == *num_demes - 1) origin_deme_num = grid[x_to_fill][y_to_fill]; // anticipating change in deme indexing, as a result of remove_deme
 				remove_deme(grid[x_to_fill][y_to_fill], num_cells, num_clones, num_demes, num_empty_demes, empty_cols, num_empty_cols, num_empty_driver_cols, empty_driver_cols, 
-					num_extinct_genotypes, num_extinct_driver_genotypes);
+					num_extinct_genotypes, num_extinct_driver_genotypes, gens_elapsed);
 			}
 		}
 	}
@@ -1111,7 +1120,7 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 
 	// move cells from the dividing deme into the newly created deme (or remove cells if deme is dividing beyond the edge):
 	move_cells(idum, origin_deme_num, dividing_beyond_the_edge, new_deme_index, num_cells, num_demes, num_empty_demes, num_clones, 
-		num_empty_cols, num_empty_driver_cols, num_extinct_genotypes, num_extinct_driver_genotypes, event_counter);
+		num_empty_cols, num_empty_driver_cols, num_extinct_genotypes, num_extinct_driver_genotypes, event_counter, gens_elapsed);
 	
 	event_counter[FISSION_EVENT]++;
 }
@@ -1119,12 +1128,17 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 ///// genotype or driver genotype:
 
 // choose numbers of mutations of each type (passenger, birth rate, migration rate):
-void choose_number_mutations(int *new_passengers, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum)
+void choose_number_mutations(int *new_passengers, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum, int num_parent_drivers)
 {
 	int i;
 
 	for(i=0; i<2; i++) { // loop over both daughter cells
-		new_birth_mutations[i] = poisson(idum, mu_driver_birth); // driver mutations
+		//new_birth_mutations[i] = poisson(idum, mu_driver_birth); // driver mutations
+		if(num_parent_drivers > 0) {
+			new_birth_mutations[i] = 0;
+		} else if(ran1(idum) < mu_driver_birth) {
+			new_birth_mutations[i] = 1;
+		}
 		new_passengers[i] = poisson(idum, mu_passenger); // passenger mutations
 		new_mig_mutations[i] = poisson(idum, mu_driver_migration); // migration rate mutations
 		new_mutations[i] = new_birth_mutations[i] + new_passengers[i] + new_mig_mutations[i];
@@ -1179,10 +1193,11 @@ void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, i
 	geno_or_driver_ints[IMMORTAL][daughter_geno_num] = 0;
 
 	geno_or_driver_floats[ORIGIN_TIME][daughter_geno_num] = gens_elapsed;
+	geno_or_driver_floats[THRESHOLD_TIME][daughter_geno_num] = -1;
 }
 
 // increment or decrement a genotype or driver genotype:
-void increment_or_decrement_genotype(int **geno_or_driver_ints, int parent_geno_num, int *empty_cols, int *num_empty_cols, int change, int *num_extinct_genotypes)
+void increment_or_decrement_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int parent_geno_num, int *empty_cols, int *num_empty_cols, int change, int *num_extinct_genotypes, float gens_elapsed)
 {
 	geno_or_driver_ints[POPULATION][parent_geno_num] += change;
 	
@@ -1196,7 +1211,10 @@ void increment_or_decrement_genotype(int **geno_or_driver_ints, int parent_geno_
 	if(geno_or_driver_ints[POPULATION][parent_geno_num] == 0 && geno_or_driver_ints[IMMORTAL][parent_geno_num] == 1) *num_extinct_genotypes += 1;
 
 	// if genotype population has reached a reasonably large size then it will never be overwritten:
-	if(geno_or_driver_ints[POPULATION][parent_geno_num] >= 10) geno_or_driver_ints[IMMORTAL][parent_geno_num] = 1;
+	if(geno_or_driver_ints[POPULATION][parent_geno_num] >= 10) {
+		geno_or_driver_ints[IMMORTAL][parent_geno_num] = 1;
+		if(geno_or_driver_floats[THRESHOLD_TIME][parent_geno_num] == -1) geno_or_driver_floats[THRESHOLD_TIME][parent_geno_num] = gens_elapsed;
+	}
 }
 
 // create new column of distance matrix or driver distance matrix:
@@ -1354,7 +1372,7 @@ void remove_clone(int chosen_clone, int deme_index, int *num_clones, int num_clo
 
 // move cells from the dividing deme into the newly created deme (or remove cells if deme is dividing beyond the edge):
 void move_cells(long *idum, int origin_deme_num, int dividing_beyond_the_edge, int new_deme_index, int *num_cells, int *num_demes, int *num_empty_demes, int *num_clones, 
-	int *num_empty_cols, int *num_empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int *event_counter)
+	int *num_empty_cols, int *num_empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int *event_counter, float gens_elapsed)
 {
 	int deme_pop_all_cells = deme_ints[POPULATION][origin_deme_num] + deme_ints[NORMAL_CELLS][origin_deme_num];
 	int num_already_sampled_from_deme = 0;
@@ -1389,8 +1407,8 @@ void move_cells(long *idum, int origin_deme_num, int dividing_beyond_the_edge, i
 
 				if(dividing_beyond_the_edge) {
 					*num_cells = *num_cells - clone_sample_size;
-					increment_or_decrement_genotype(genotype_ints, geno_num, empty_cols, num_empty_cols, -clone_sample_size, num_extinct_genotypes);
-					increment_or_decrement_genotype(driver_genotype_ints, driver_geno_num, empty_driver_cols, num_empty_driver_cols, -clone_sample_size, num_extinct_driver_genotypes);
+					increment_or_decrement_genotype(genotype_ints, genotype_floats, geno_num, empty_cols, num_empty_cols, -clone_sample_size, num_extinct_genotypes, gens_elapsed);
+					increment_or_decrement_genotype(driver_genotype_ints, driver_genotype_floats, driver_geno_num, empty_driver_cols, num_empty_driver_cols, -clone_sample_size, num_extinct_driver_genotypes, gens_elapsed);
 				}
 			}
 			else { // for normal cells:
@@ -1522,7 +1540,7 @@ void create_deme(int new_x, int new_y, int *num_demes, int num_cells)
 
 // remove a deme and all of its contents:
 void remove_deme(int deme_index, int *num_cells, int *num_clones, int *num_demes, int *num_empty_demes, int *empty_cols, int *num_empty_cols, int *num_empty_driver_cols, int *empty_driver_cols, 
-	int *num_extinct_genotypes, int *num_extinct_driver_genotypes)
+	int *num_extinct_genotypes, int *num_extinct_driver_genotypes, float gens_elapsed)
 {
 	int i, clone_i;
 	int clone_num, geno_num, driver_geno_num;
@@ -1538,8 +1556,8 @@ void remove_deme(int deme_index, int *num_cells, int *num_clones, int *num_demes
 		driver_geno_num = clone_ints[DRIVER_GENOTYPE][clone_num];
 
 		// subtract clone population from genotype and driver genotype populations:
-		increment_or_decrement_genotype(genotype_ints, geno_num, empty_cols, num_empty_cols, -clone_ints[POPULATION][clone_num], num_extinct_genotypes);
-		increment_or_decrement_genotype(driver_genotype_ints, driver_geno_num, empty_driver_cols, num_empty_driver_cols, -clone_ints[POPULATION][clone_num], num_extinct_driver_genotypes);
+		increment_or_decrement_genotype(genotype_ints, genotype_floats, geno_num, empty_cols, num_empty_cols, -clone_ints[POPULATION][clone_num], num_extinct_genotypes, gens_elapsed);
+		increment_or_decrement_genotype(driver_genotype_ints, driver_genotype_floats, driver_geno_num, empty_driver_cols, num_empty_driver_cols, -clone_ints[POPULATION][clone_num], num_extinct_driver_genotypes, gens_elapsed);
 
 		// replace the clone in clones array, and in list of clones in relevant deme, unless it's at the end of the array:
 		if(clone_num < *num_clones - 1) {
@@ -1860,15 +1878,15 @@ void initiate_files(int *num_samples_list)
 	fprintf(output_demes, "Generation\tX\tY\tPopulation\tNormalCells\tDeathRate\tDiversity\tDriverDiversity\n");
 	fprintf(output_clones, "Generation\tClone\tDeme\tGenotype\tDriverGenotype\tParent\tDriverParent\tX\tY\tNormalCells\tPopulation\tBirthRate\t");
 	fprintf(output_clones, "MigrationRate\tDeathRate\tMigrationModifier\tDriverMutations\tMigrationMutations\tPassengerMutations\n");
-	fprintf(output_phylo, "NumCells\tNumSamples\tCellsPerSample\tSampleDepth\tGeneration\tIdentity\tParent\tPopulation\tBirthRate\tMigrationRate\tOriginTime\tDriverMutations\tMigrationMutations\tPassengerMutations\n");
-	fprintf(output_driver_phylo, "NumCells\tNumSamples\tCellsPerSample\tSampleDepth\tGeneration\tIdentity\tDriverIdentity\tParent\tPopulation\tBirthRate\tMigrationRate\tOriginTime\tDriverMutations\tMigrationMutations\tPassengerMutations\n");
+	fprintf(output_phylo, "NumCells\tNumSamples\tCellsPerSample\tSampleDepth\tGeneration\tIdentity\tParent\tPopulation\tBirthRate\tMigrationRate\tOriginTime\tThresholdTime\tDriverMutations\tMigrationMutations\tPassengerMutations\n");
+	fprintf(output_driver_phylo, "NumCells\tNumSamples\tCellsPerSample\tSampleDepth\tGeneration\tIdentity\tDriverIdentity\tParent\tPopulation\tBirthRate\tMigrationRate\tOriginTime\tThresholdTime\tDriverMutations\tMigrationMutations\tPassengerMutations\n");
 	fprintf(sample_size_log, "Generation\tNumSamples\tDepth\tTargetSampleSize\tActualSampleSize\n");
 	fprintf(output_allele_counts, "Generation\tSize\tFrequency\tCount\n");
 	fprintf(output_driver_allele_counts, "Generation\tSize\tFrequency\tCount\n");
 	fprintf(output_genotype_counts, "Generation\tSize\tFrequency\tCount\n");
 	fprintf(output_driver_genotype_counts, "Generation\tSize\tFrequency\tCount\n");
-	fprintf(output_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tPassengerMutations\tBirthRate\tMigrationRate\tOriginTime\tDescendants\n");
-	fprintf(output_driver_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tPassengerMutations\tBirthRate\tMigrationRate\tOriginTime\tDescendants\n");
+	fprintf(output_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tPassengerMutations\tBirthRate\tMigrationRate\tOriginTime\tThresholdTime\tDescendants\n");
+	fprintf(output_driver_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tPassengerMutations\tBirthRate\tMigrationRate\tOriginTime\tThresholdTime\tDescendants\n");
 }
 
 // calculate metrics and write to files:
@@ -2201,9 +2219,9 @@ void write_output_phylo(FILE* output, int num_cols, float gens_elapsed, int *pop
 {
 	int i;
 
-	for(i=0; i<num_cols; i++) if(genotype_or_driver_ints[IMMORTAL][i] == 1) fprintf(output, "%d\t%d\t%d\t%d\t%f\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%d\t%d\t%d\n", num_cells, samples, biopsy_size_per_sample, depth, gens_elapsed, 
+	for(i=0; i<num_cols; i++) if(genotype_or_driver_ints[IMMORTAL][i] == 1) fprintf(output, "%d\t%d\t%d\t%d\t%f\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%d\t%d\t%d\n", num_cells, samples, biopsy_size_per_sample, depth, gens_elapsed, 
 		genotype_or_driver_ints[IDENTITY][i], genotype_or_driver_ints[DRIVER_IDENTITY][i], genotype_or_driver_ints[PARENT][i], populations[i], genotype_or_driver_floats[BIRTH_RATE][i], genotype_or_driver_floats[MIGRATION_RATE][i], 
-		genotype_or_driver_floats[ORIGIN_TIME][i], genotype_or_driver_ints[NUM_DRIVER_MUTATIONS][i], genotype_or_driver_ints[NUM_MIGRATION_MUTATIONS][i], genotype_or_driver_ints[NUM_PASSENGER_MUTATIONS][i]);
+		genotype_or_driver_floats[ORIGIN_TIME][i], genotype_or_driver_floats[THRESHOLD_TIME][i], genotype_or_driver_ints[NUM_DRIVER_MUTATIONS][i], genotype_or_driver_ints[NUM_MIGRATION_MUTATIONS][i], genotype_or_driver_ints[NUM_PASSENGER_MUTATIONS][i]);
 }
 
 void write_frequency_table(FILE *filename, int **freq_table, int denominator, float gens_elapsed, int array_length)
@@ -2220,7 +2238,7 @@ void write_genotypes(FILE *output_genotype_properties, int num_matrix_cols, int 
 	for(i = 0; i < num_matrix_cols; i++) if(allele_count[i] > 0) {
 		fprintf(output_genotype_properties, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t", genotype_or_driver_ints[POPULATION][i], genotype_or_driver_ints[PARENT][i], genotype_or_driver_ints[IDENTITY][i], genotype_or_driver_ints[DRIVER_IDENTITY][i],
 			genotype_or_driver_ints[NUM_DRIVER_MUTATIONS][i], genotype_or_driver_ints[NUM_MIGRATION_MUTATIONS][i], genotype_or_driver_ints[IMMORTAL][i], genotype_or_driver_ints[NUM_PASSENGER_MUTATIONS][i]);
-		fprintf(output_genotype_properties, "%f\t%f\t%f\t", genotype_or_driver_floats[BIRTH_RATE][i], genotype_or_driver_floats[MIGRATION_RATE][i], genotype_or_driver_floats[ORIGIN_TIME][i]);
+		fprintf(output_genotype_properties, "%f\t%f\t%f\t%f\t", genotype_or_driver_floats[BIRTH_RATE][i], genotype_or_driver_floats[MIGRATION_RATE][i], genotype_or_driver_floats[ORIGIN_TIME][i], genotype_or_driver_floats[THRESHOLD_TIME][i]);
 		fprintf(output_genotype_properties, "%d\n", allele_count[i]);
 	}
 }
@@ -2541,8 +2559,9 @@ float set_birth_rate(int new_birth_mutations, int new_passengers, float parent_b
 	int i;
 
 	for(i = 0; i < new_passengers; i++) birth_rate = birth_rate / (1 + s_passenger);
-	if(max_relative_birth_rate >= 0) for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * (1 - birth_rate / max_relative_birth_rate) * expdev(idum));
-	else for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * expdev(idum));
+	// if(max_relative_birth_rate >= 0) for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * (1 - birth_rate / max_relative_birth_rate) * expdev(idum));
+	// else for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * expdev(idum));
+	for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth);
 	
 	if(birth_rate >= baseline_death_rate + density_dept_death_rate) {
 		printf("Birth rate exceeds death rate at iterations %d\n", iterations);

@@ -72,8 +72,9 @@
 #define BIRTH_RATE 0 // birth rate conferred by the genotype
 #define MIGRATION_RATE 1 // migration rate conferred by the genotype
 #define ORIGIN_TIME 2 // generation at which genotype originated
+#define THRESHOLD_TIME 3 // generation at which genotype population exceeded minimum threshold
 
-#define NUM_GENOTYPE_FLOAT_PROPS 3
+#define NUM_GENOTYPE_FLOAT_PROPS 4
 
 ///// genotype relatives:
 #define PARENT_INDEX 0
@@ -142,19 +143,19 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 	int *num_extinct_driver_genotypes, float gens_elapsed);
 void cell_death(int *event_counter, int *num_cells, int parent_deme_num, int parent_geno_num, int *empty_cols, int *num_empty_cols,
 	int chosen_clone, int *num_clones, int parent_driver_geno_num, int *num_empty_driver_cols, int *empty_driver_cols, int num_demes, 
-	int *num_extinct_genotypes, int *num_empty_demes, int *num_extinct_driver_genotypes);
+	int *num_extinct_genotypes, int *num_empty_demes, int *num_extinct_driver_genotypes, float gens_elapsed);
 void cell_migration(int *event_counter, int parent_deme_num, long *idum, int *num_demes, int *num_clones, int parent_clone, int *num_cells,
 	int daughter_geno_num, int daughter_driver_geno_num, int *num_empty_demes, int *empty_cols, int *num_empty_cols, int *num_empty_driver_cols, int *empty_driver_cols, 
-	int *num_extinct_genotypes, int *num_extinct_driver_genotypes);
+	int *num_extinct_genotypes, int *num_extinct_driver_genotypes, float gens_elapsed);
 void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_demes, int *num_clones, int *num_cells, int *num_empty_demes, int *num_empty_cols, int *num_empty_driver_cols, 
-	int *empty_cols, int *empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int num_matrix_cols);
+	int *empty_cols, int *empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int num_matrix_cols, float gens_elapsed);
 
 // genotype and driver genotype events (lower level):
-void choose_number_mutations(int *new_passengers, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum);
+void choose_number_mutations(int *new_passengers, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum, int num_parent_drivers);
 int select_genotype_index(int *num_empty_cols, int *num_matrix_cols, int *empty_cols);
 void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int *num_matrix_cols, int daughter_geno_num, int parent_geno_num, int *next_genotype_id, int daughter_driver_id, 
 	float new_birth_rate, float new_migration_rate, int new_passengers, int new_birth_mutations, int new_mig_mutations, float gens_elapsed);
-void increment_or_decrement_genotype(int **geno_or_driver_ints, int parent_geno_num, int *empty_cols, int *num_empty_cols, int change, int *num_extinct_genotypes);
+void increment_or_decrement_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int parent_geno_num, int *empty_cols, int *num_empty_cols, int change, int *num_extinct_genotypes, float gens_elapsed);
 void create_column(int **either_matrix, int num_matrix_cols, int parent_geno_num, int daughter_geno_num, int num_mutations);
 
 // clone events (lower level):
@@ -165,13 +166,13 @@ void remove_clone(int chosen_clone, int deme_index, int *num_clones, int num_clo
 
 // deme events (lower level):
 void move_cells(long *idum, int origin_deme_num, int dividing_beyond_the_edge, int new_deme_index, int *num_cells, int *num_demes, int *num_empty_demes, int *num_clones, 
-	int *num_empty_cols, int *num_empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int *event_counter);
+	int *num_empty_cols, int *num_empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int *event_counter, float gens_elapsed);
 void budge_demes(int old_x, int old_y, int *x_to_fill, int *y_to_fill);
 void get_deme_coordinates(int *x_to_fill, int *y_to_fill, int old_x, int old_y, long *idum);
 void choose_grid_square(int old_deme_index, long *idum, int *new_x, int *new_y);
 void create_deme(int new_x, int new_y, int *num_demes, int num_cells);
 void remove_deme(int deme_index, int *num_cells, int *num_clones, int *num_demes, int *num_empty_demes, int *empty_cols, int *num_empty_cols, int *num_empty_driver_cols, int *empty_driver_cols, 
-	int *num_extinct_genotypes, int *num_extinct_driver_genotypes);
+	int *num_extinct_genotypes, int *num_extinct_driver_genotypes, float gens_elapsed);
 void increment_or_decrement_deme(int change, int deme_index, int num_cells, int num_demes, int *num_empty_demes);
 void add_or_remove_normal_cell(int change, int deme_index, int num_cells, int *event_counter, int num_demes);
 
