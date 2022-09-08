@@ -2,27 +2,27 @@ parameters
 {
     spatial_structure
     {
-        log2_deme_carrying_capacity 7
+        log2_deme_carrying_capacity 2
     }
     dispersal
     {
         migration_type 0
-        init_migration_rate 2e-03
-        migration_edge_only 1
+        init_migration_rate 1
+        migration_edge_only 0
         migration_rate_scales_with_K 1
     }
     mutation_rates
     {
-        mu_driver_birth 1e-05
-        mu_passenger 0.01
-        mu_driver_migration 0.01
+        mu_driver_birth 1e-02
+        mu_passenger 0
+        mu_driver_migration 0
         passenger_pop_threshold -1
     }
     fitness_effects
     {
         normal_birth_rate 0.9
         baseline_death_rate 0
-        s_driver_birth 0.1
+        s_driver_birth 0.5
         s_passenger 0
         s_driver_migration 0
         max_relative_birth_rate 10
@@ -32,7 +32,7 @@ parameters
     {
         init_pop 1
         matrix_max -1
-        max_pop 1000000
+        max_pop 10000
         max_time 86400
         max_generations 2000
         seed 10
