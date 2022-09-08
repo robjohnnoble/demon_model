@@ -1,5 +1,5 @@
 # demon
-Demon (deme-based oncology model) is a flexible framework for modelling intra-tumour population genetics with varied spatial structures and modes of cell dispersal.
+Modification of demon (deme-based oncology model) to detect selective sweeps.
 
 ## Prerequisites
 
