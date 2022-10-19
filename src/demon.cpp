@@ -366,6 +366,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	*next_genotype_id = 2;
 	// set genotype birth and miration rates:
 	genotype_floats[BIRTH_RATE][1] = set_birth_rate(init_driver_birth_mutations + 1, init_passengers, 1.0, idum);
+	printf("\nDriver birth rate = %f\n\n", genotype_floats[BIRTH_RATE][1]);
 	genotype_floats[MIGRATION_RATE][1] = set_migration_rate(init_driver_mig_mutations, init_migration_rate, idum);
 	genotype_floats[ORIGIN_TIME][1] = 0; // generation at which genotype originated
 	genotype_floats[THRESHOLD_TIME][1] = -1; // generation at which genotype population exceeded minimum threshold
@@ -400,7 +401,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 		deme_ints[NUM_CLONES_IN_DEME][index] = 1;
 		deme_floats[DEATH_RATE][index] = set_death_rate(index, *num_cells);
 		deme_floats[MIGRATION_MODIFIER][index] = set_migration_modifier(deme_ints[NORMAL_CELLS][index], deme_ints[POPULATION][index]);
-		if(i >= 0 && i <= 1 && j >= 0 && j <= 1) {
+		if(x >= dim_grid / 2 + 0 && x <= dim_grid / 2 + 1 && y >= dim_grid / 2 + 0 && y <= dim_grid / 2 + 1) {
 			deme_doubles[SUM_BIRTH_RATES][index] = (double)genotype_floats[BIRTH_RATE][1] * (double)deme_ints[POPULATION][index];
 			} else {
 				deme_doubles[SUM_BIRTH_RATES][index] = (double)genotype_floats[BIRTH_RATE][0] * (double)deme_ints[POPULATION][index];
@@ -440,8 +441,8 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	}
 
 	for(i=0; i<=1; i++) for(j=0; j<=1; j++) {
-		x = dim_grid / 2 - init_diameter / 2 + i;
-		y = dim_grid / 2 - init_diameter / 2 + j;
+		x = dim_grid / 2 + i;
+		y = dim_grid / 2 + j;
 		deme_num = grid[x][y];
 		clone_index = clones_list_in_deme[deme_num][0];
 		clone_ints[GENOTYPE][clone_index] = 1;
@@ -1080,6 +1081,10 @@ void cell_migration(int *event_counter, int origin_deme_num, long *idum, int *nu
 
 	// if migration should occur only at the edge, and the destination deme is already too full then the migration attempts fails:
 	if(new_deme_num != EMPTY) if(migration_edge_only && ran1(idum) < deme_floats[MIGRATION_MODIFIER][new_deme_num]) return;
+
+	// unique to this version: cancer cells with no driver mutations cannot invade empty demes
+	if(deme_ints[POPULATION][new_deme_num] == 0 && genotype_ints[NUM_DRIVER_MUTATIONS][geno_num] == 0) return;
+	//printf("geno_num = %d, NUM_DRIVER_MUTATIONS = %d\n", geno_num, genotype_ints[NUM_DRIVER_MUTATIONS][geno_num]);
 
 	// if new deme has not yet been occupied then initiate the deme:
 	if(new_deme_num == EMPTY) {
