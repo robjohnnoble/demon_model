@@ -733,11 +733,11 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 
 			iterations++;
 		
-		}while(num_cells < max_pop && num_cells > 0 && (long)time(NULL)-t1 < max_time && gens_elapsed < max_generations);
+		}while(num_cells < max_pop && genotype_ints[POPULATION][1] > 0 && num_cells > 0 && (long)time(NULL)-t1 < max_time && gens_elapsed < max_generations);
 
 		end_of_loop_output(num_cells, gens_elapsed, t1);
 
-		if(num_cells >= MIN(10, max_pop) || filled_grid) break;
+		if(genotype_ints[POPULATION][1] > 0) break;
 	}
 
 	if(num_cells > 0) {
