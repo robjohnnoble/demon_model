@@ -420,6 +420,15 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	max_layer_needed = max_layer_needed_array[*num_demes];
 	set_bintree_sums_subsequent_layers(bintree_deme_doubles, *num_demes, max_layer_needed, max_demes);
 
+	// grid:
+	for(i=0; i<dim_grid; i++) for(j=0; j<dim_grid; j++) grid[i][j] = EMPTY; // means that grid squares have not yet been occupied
+	for(i=0; i < init_diameter; i++) for(j=0; j < init_diameter; j++) {
+		index = i * init_diameter + j;
+		x = dim_grid / 2 - init_diameter / 2 + i;
+		y = dim_grid / 2 - init_diameter / 2 + j;
+		if(index < *num_demes) grid[x][y] = index;
+	}
+
 	// clones:
 	for(index=0; index < *num_clones; index++) {
 		clone_ints[POPULATION][index] = deme_ints[POPULATION][index];
@@ -431,15 +440,6 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 		if(use_clone_bintrees) set_clone_in_deme(index, 0, 0, clone_ints[POPULATION][index]);
 	}
 
-	// grid:
-	for(i=0; i<dim_grid; i++) for(j=0; j<dim_grid; j++) grid[i][j] = EMPTY; // means that grid squares have not yet been occupied
-	for(i=0; i < init_diameter; i++) for(j=0; j < init_diameter; j++) {
-		index = i * init_diameter + j;
-		x = dim_grid / 2 - init_diameter / 2 + i;
-		y = dim_grid / 2 - init_diameter / 2 + j;
-		if(index < *num_demes) grid[x][y] = index;
-	}
-
 	for(i=0; i<=1; i++) for(j=0; j<=1; j++) {
 		x = dim_grid / 2 + i;
 		y = dim_grid / 2 + j;
@@ -447,7 +447,39 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 		clone_index = clones_list_in_deme[deme_num][0];
 		clone_ints[GENOTYPE][clone_index] = 1;
 		clone_ints[DRIVER_GENOTYPE][clone_index] = 1;
+		if(use_clone_bintrees) set_clone_in_deme(deme_num, 1, 0, clone_ints[POPULATION][clone_index]);
 	}
+
+	// printf("\n");
+	// for(y = 0; y < dim_grid; y++) {
+	// 	for(x = 0; x < dim_grid; x++) {
+	// 	index = grid[x][y];
+	// 	printf("%.1f\t", deme_doubles[SUM_BIRTH_RATES][index]);
+	// }
+	// printf("\n");
+	// }
+	// printf("\n");
+
+	// printf("\n");
+	// for(y = 0; y < dim_grid; y++) {
+	// 	for(x = 0; x < dim_grid; x++) {
+	// 	index = grid[x][y];
+	// 	printf("%d(%d)\t", deme_ints[POPULATION][index], index);
+	// }
+	// printf("\n");
+	// }
+	// printf("\n");
+
+	// printf("\n");
+	// for(y = 0; y < dim_grid; y++) {
+	// 	for(x = 0; x < dim_grid; x++) {
+	// 	index = grid[x][y];
+	// 	if(deme_ints[POPULATION][index] > 0) printf("%.1f\t", clones_rates_in_deme[index][0]);
+	// 	else printf("NA\t");
+	// }
+	// printf("\n");
+	// }
+	// printf("\n");
 
 	// clone bintrees for each deme:
 	if(use_clone_bintrees) reset_clone_bintree_sums(*num_demes, *num_clones);
