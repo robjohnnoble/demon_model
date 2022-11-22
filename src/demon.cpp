@@ -922,8 +922,6 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 
 	else { // it at least one daughter has at least one mutation:
 
-		printf("Starting the loop\n");
-		
 		// if only the first daughter has one or more new mutations then index = 0;
 		// if only the second daughter has one or more new mutations then index = 1;
 		// if both daughters have one or more new mutations then index = 0 and 1;
@@ -1139,7 +1137,6 @@ void choose_number_mutations(int *new_passengers, int *new_mig_mutations, int *n
 		//new_birth_mutations[i] = poisson(idum, mu_driver_birth); // driver mutations
 		if(num_parent_drivers == 0 && ran1(idum) < mu_driver_birth) {
 			new_birth_mutations[i] = 1;
-			printf("\nMutation!!!\n\n");
 		}
 		new_passengers[i] = poisson(idum, mu_passenger); // passenger mutations
 		new_mig_mutations[i] = poisson(idum, mu_driver_migration); // migration rate mutations
