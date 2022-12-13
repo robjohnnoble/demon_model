@@ -66,8 +66,10 @@
 #define NUM_MIGRATION_MUTATIONS 5 // number of migration rate mutations
 #define IMMORTAL 6 // whether genotype record can be overwritten
 #define NUM_PASSENGER_MUTATIONS 7 // number of passenger mutations
+#define ORIGIN_X 8 // x coordinate at which genotype originated
+#define ORIGIN_Y 9 // y coordinate at which genotype originated
 
-#define NUM_GENOTYPE_INT_PROPS 8
+#define NUM_GENOTYPE_INT_PROPS 10
 //
 #define BIRTH_RATE 0 // birth rate conferred by the genotype
 #define MIGRATION_RATE 1 // migration rate conferred by the genotype
@@ -154,7 +156,7 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 void choose_number_mutations(int *new_passengers, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum, int num_parent_drivers);
 int select_genotype_index(int *num_empty_cols, int *num_matrix_cols, int *empty_cols);
 void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int *num_matrix_cols, int daughter_geno_num, int parent_geno_num, int *next_genotype_id, int daughter_driver_id, 
-	float new_birth_rate, float new_migration_rate, int new_passengers, int new_birth_mutations, int new_mig_mutations, float gens_elapsed);
+	float new_birth_rate, float new_migration_rate, int new_passengers, int new_birth_mutations, int new_mig_mutations, float gens_elapsed, int parent_deme_num);
 void increment_or_decrement_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int parent_geno_num, int *empty_cols, int *num_empty_cols, int change, int *num_extinct_genotypes, float gens_elapsed);
 void create_column(int **either_matrix, int num_matrix_cols, int parent_geno_num, int daughter_geno_num, int num_mutations);
 
