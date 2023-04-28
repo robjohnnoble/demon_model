@@ -615,7 +615,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 			// periodically create images of the grid state:
 			if(gens_timer_grids >= 10 || iterations == 0) {
 				gens_timer_grids = 0;
-				grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, FALSE);
+				// grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, FALSE);
 			}
 
 			// calculate sum of all rates (for calculating elapsed time):
@@ -776,7 +776,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 		main_calculations_and_output(&idum, num_demes, num_matrix_cols, num_driver_matrix_cols, gens_elapsed, driver_counts, num_cells, num_clones, 1, 
 			num_samples_list, next_genotype_id, next_driver_genotype_id, event_counter, num_empty_cols, num_empty_driver_cols, num_extinct_genotypes, 
 			num_extinct_driver_genotypes, num_empty_demes, t1, 1, PHYLO_AND_POPS + DIVERSITIES + GENOPROPS);
-		grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, TRUE);
+		// grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, TRUE);
 	}
 
 	final_output(trial_num, num_cells, t1);
