@@ -539,7 +539,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 			// periodically create images of the grid state:
 			if(gens_timer_grids >= 10 || iterations == 0) {
 				gens_timer_grids = 0;
-				grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, FALSE);
+				// grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, FALSE);
 			}
 
 			// calculate sum of all rates (for calculating elapsed time):
