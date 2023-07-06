@@ -17,6 +17,9 @@ int **genotype_relatives;
 int **freq_table;
 float **depth_diversity;
 float **depth_diversity_bigsample;
+// methylation two-dim arrays:
+float **methylation_arrays;
+float **deme_methylation;
 
 // one-dim arrays:
 double *bintree_deme_doubles;
@@ -39,7 +42,6 @@ int migration_edge_only; // whether migration / deme fission occurs only at the 
 int migration_rate_scales_with_K; // whether migration / deme fission rate should be divided by sqrt(K)
 float mu_driver_birth; // rate of driver mutations affecting birth rate
 float mu_driver_migration; // rate of driver mutations affecting migration rate
-float mu_passenger; // passenger mutation rate
 float normal_birth_rate; // birth rate of normal cells, relative to initial cancer cell birth rate
 float baseline_death_rate; // baseline death rate regardless of deme population size
 float s_driver_birth; // mean positive effect on birth rate per driver mutation
@@ -58,9 +60,10 @@ int record_matrix; // whether to record distance matrix for all genotypes (not j
 int write_phylo; // whether to write phylo file for all genotypes (not just drivers)
 int calculate_total_diversity; // whether to calculate diversity for all genotypes (not just drivers)
 int biopsy_size_per_sample; // max number of cells per biopsy sample
-
+// methylation parameters read from config file
 int fCpG_sites_per_cell; // number of fCpG sites per cell
 float manual_array; // percentage of demethylated sites in initial array (-1 for random initial array)
+float mu_passenger; // fCpG flipping ((de)methylation) rate
 
 // derived parameters:
 int K; // deme carrying capacity
@@ -166,7 +169,11 @@ void read_parameters(boost::property_tree::ptree pt)
 	// mutation rates:
 	mu_driver_birth = pt.get <float> ("parameters.mutation_rates.mu_driver_birth"); // rate of driver mutations affecting birth rate
 	mu_driver_migration = pt.get <float> ("parameters.mutation_rates.mu_driver_migration"); // rate of driver mutations affecting migration rate
-	mu_passenger = pt.get <float> ("parameters.mutation_rates.mu_passenger"); // passenger mutation rate
+	mu_passenger = pt.get <float> ("parameters.mutation_rates.mu_passenger"); // fCpG flipping ((de)methylation) rate
+
+	// methylation parameters:
+	fCpG_sites_per_cell = pt.get <float> ("parameters.methylation_parameters.fCpG_sites_per_cell"); // number of fCpG sites per cell
+	manual_array = pt.get <float> ("parameters.methylation_parameters.manual_array"); // percentage of demethylated sites in initial array
 
 	// seed:
 	seed = pt.get <int> ("parameters.non_biological_parameters.seed"); // seed for random number generator
@@ -1798,11 +1805,17 @@ void open_files(char *input_and_output_path)
 	sprintf(filebuff, "%soutput_driver_genotype_properties.dat", input_and_output_path);
 	output_driver_genotype_properties=fopen(filebuff, "w+");
 
+	sprintf(filebuff, "%soutput_methylation_arrays.dat", input_and_output_path);
+	output_methylation_arrays=fopen(filebuff, "w+");
+	sprintf(filebuff, "%soutput_deme_methylation.dat", input_and_output_path);
+	output_deme_methylation=fopen(filebuff, "w+");
+
 	// check that files were successfully opened:
 	if (output_parameters == NULL || output_pops == NULL || output_diversities == NULL || output_demes == NULL || output_clones == NULL || output_genotype_counts == NULL || output_driver_genotype_counts == NULL || 
 		output_phylo == NULL || output_driver_phylo == NULL || output_matrix == NULL || output_driver_matrix == NULL || output_popgrid == NULL || output_passengersgrid == NULL || output_normalcellsgrid == NULL || 
 		output_deathrates_grid == NULL || output_birthratesgrid == NULL || output_migrationratesgrid == NULL || output_driversgrid == NULL || error_log == NULL || sample_size_log == NULL || 
-		output_allele_counts == NULL || output_driver_allele_counts == NULL || output_genotype_properties == NULL || output_driver_genotype_properties == NULL) {
+		output_allele_counts == NULL || output_driver_allele_counts == NULL || output_genotype_properties == NULL || output_driver_genotype_properties == NULL ||
+		output_deme_methylation == NULL || output_methylation_arrays == NULL) {
 		perror("Failed to open output file");
 		if(error_log != NULL) fprintf(error_log, "Failed to open output file\n");
 		exit(1);
@@ -1863,6 +1876,9 @@ void initiate_files(int *num_samples_list)
 	fprintf(output_driver_genotype_counts, "Generation\tSize\tFrequency\tCount\n");
 	fprintf(output_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tPassengerMutations\tBirthRate\tMigrationRate\tOriginTime\tDescendants\n");
 	fprintf(output_driver_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tPassengerMutations\tBirthRate\tMigrationRate\tOriginTime\tDescendants\n");
+
+	fprintf(output_methylation_arrays, "Identity\tArray\n");
+	fprintf(output_deme_methylation, "X\tY\tAverageArray\n");
 }
 
 // calculate metrics and write to files:
