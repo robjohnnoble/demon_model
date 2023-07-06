@@ -40,12 +40,10 @@ int migration_rate_scales_with_K; // whether migration / deme fission rate shoul
 float mu_driver_birth; // rate of driver mutations affecting birth rate
 float mu_driver_migration; // rate of driver mutations affecting migration rate
 float mu_passenger; // passenger mutation rate
-int passenger_pop_threshold; // population size at which passenger mutations stop occurring
 float normal_birth_rate; // birth rate of normal cells, relative to initial cancer cell birth rate
 float baseline_death_rate; // baseline death rate regardless of deme population size
 float s_driver_birth; // mean positive effect on birth rate per driver mutation
 float s_driver_migration; // mean positive effect on migration rate per driver mutation
-float s_passenger; // mean cost to birth rate per passenger mutation
 float max_relative_birth_rate; // maximum birth rate, relative to initial birth rate
 float max_relative_migration_rate; // maximum migration rate, relative to initial birth rate
 int init_pop; // initial population size
@@ -60,6 +58,9 @@ int record_matrix; // whether to record distance matrix for all genotypes (not j
 int write_phylo; // whether to write phylo file for all genotypes (not just drivers)
 int calculate_total_diversity; // whether to calculate diversity for all genotypes (not just drivers)
 int biopsy_size_per_sample; // max number of cells per biopsy sample
+
+int fCpG_sites_per_cell; // number of fCpG sites per cell
+float manual_array; // percentage of demethylated sites in initial array (-1 for random initial array)
 
 // derived parameters:
 int K; // deme carrying capacity
@@ -159,7 +160,6 @@ void read_parameters(boost::property_tree::ptree pt)
 	baseline_death_rate = pt.get <float> ("parameters.fitness_effects.baseline_death_rate"); // baseline death rate regardless of deme population size
 	s_driver_birth = pt.get <float> ("parameters.fitness_effects.s_driver_birth"); // mean positive effect on birth rate per driver mutation
 	s_driver_migration = pt.get <float> ("parameters.fitness_effects.s_driver_migration"); // mean positive effect on migration rate per driver mutation
-	s_passenger = pt.get <float> ("parameters.fitness_effects.s_passenger"); // mean cost to birth rate per passenger mutation
 	max_relative_birth_rate = pt.get <float> ("parameters.fitness_effects.max_relative_birth_rate"); // maximum birth rate, relative to initial birth rate
 	max_relative_migration_rate = pt.get <float> ("parameters.fitness_effects.max_relative_migration_rate"); // maximum migration rate, relative to initial birth rate
 
@@ -167,7 +167,6 @@ void read_parameters(boost::property_tree::ptree pt)
 	mu_driver_birth = pt.get <float> ("parameters.mutation_rates.mu_driver_birth"); // rate of driver mutations affecting birth rate
 	mu_driver_migration = pt.get <float> ("parameters.mutation_rates.mu_driver_migration"); // rate of driver mutations affecting migration rate
 	mu_passenger = pt.get <float> ("parameters.mutation_rates.mu_passenger"); // passenger mutation rate
-	passenger_pop_threshold = pt.get <int> ("parameters.mutation_rates.passenger_pop_threshold"); // population size at which passenger mutations stop occurring
 
 	// seed:
 	seed = pt.get <int> ("parameters.non_biological_parameters.seed"); // seed for random number generator
@@ -232,13 +231,11 @@ void read_parameters(boost::property_tree::ptree pt)
 	}
 	max_demes = dim_grid * dim_grid; // maximum number of demes (for assigning memory)
 
-	if(passenger_pop_threshold < 0) passenger_pop_threshold = 2 * MAX(max_pop, init_pop);
-	
 	max_clones_per_deme = ceil(MIN(MAX(K + 5, 1.2 * K), max_pop)); // a bit larger than K
 
 	max_driver_mu = MAX(mu_driver_migration, mu_driver_birth);
 	
-	max_genotypes = MIN(400 * MAX(mu_passenger * passenger_pop_threshold, max_driver_mu * max_pop), 1e8);
+	max_genotypes = MIN(400 * max_driver_mu * max_pop, 1e8);
 	max_genotypes = MAX(max_genotypes, 10);
 	
 	if(matrix_max <= 0) max_driver_genotypes = MIN(400 * max_driver_mu * max_pop, 1e8);
@@ -331,7 +328,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	genotype_ints[NUM_PASSENGER_MUTATIONS][0] = init_passengers; // number of passengers
 	*next_genotype_id = 1;
 	// set genotype birth and miration rates:
-	genotype_floats[BIRTH_RATE][0] = set_birth_rate(init_driver_birth_mutations, init_passengers, 1.0, idum);
+	genotype_floats[BIRTH_RATE][0] = set_birth_rate(init_driver_birth_mutations, 1.0, idum);
 	genotype_floats[MIGRATION_RATE][0] = set_migration_rate(init_driver_mig_mutations, init_migration_rate, idum);
 	genotype_floats[ORIGIN_TIME][0] = 0; // generation at which genotype originated
 
@@ -490,9 +487,6 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 
 		// main loop:
 		do{
-			// optionally, passenger mutations stop occurring when population size reaches a threshold:
-			if(num_cells >= passenger_pop_threshold) mu_passenger = 0;
-
 			// periodically reset sums of rates, to get rid of accumulated rounding errors:
 			if(!(iterations % 100000) && iterations > 0) {
 				reset_deme_and_bintree_sums(num_demes, num_clones, 0);
@@ -924,7 +918,7 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 		for(index = start_index; index <= end_index; index++) { // loop over the mutated daughter cell(s)
 			event_counter[MUTATION_EVENT]++;
 
-			new_birth_rate = set_birth_rate(new_birth_mutations[index], new_passengers[index], genotype_floats[BIRTH_RATE][parent_geno_num], idum);
+			new_birth_rate = set_birth_rate(new_birth_mutations[index], genotype_floats[BIRTH_RATE][parent_geno_num], idum);
 			new_migration_rate = set_migration_rate(new_mig_mutations[index], genotype_floats[MIGRATION_RATE][parent_geno_num], idum);
 			
 			// if the daughter has at least one driver mutation then create a new driver genotype and add a column to the driver distance matrix:
@@ -1830,10 +1824,10 @@ void initiate_files(int *num_samples_list)
 
 	// write parameter values to file:
 	fprintf(output_parameters, "K\tmigration_type\tinit_migration_rate\tmigration_edge_only\tmigration_rate_scales_with_K\tmu_driver_birth\tmu_passenger\tmu_driver_migration\t");
-	fprintf(output_parameters, "normal_birth_rate\tbaseline_death_rate\ts_driver_birth\ts_passenger\ts_driver_migration\tmax_relative_birth_rate\tmax_relative_migration_rate\tinit_pop\tseed\tbiopsy_size_per_sample\n");
+	fprintf(output_parameters, "normal_birth_rate\tbaseline_death_rate\ts_driver_birth\ts_driver_migration\tmax_relative_birth_rate\tmax_relative_migration_rate\tinit_pop\tseed\tbiopsy_size_per_sample\n");
 	fprintf(output_parameters, "%d\t%d\t%e\t%d\t%d\t%e\t%e\t%e\t", K, migration_type, init_migration_rate, migration_edge_only, migration_rate_scales_with_K, 
 		mu_driver_birth, mu_passenger, mu_driver_migration);
-	fprintf(output_parameters, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\t%d\n", normal_birth_rate, baseline_death_rate, s_driver_birth, s_passenger, s_driver_migration, max_relative_birth_rate, max_relative_migration_rate, 
+	fprintf(output_parameters, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\t%d\n", normal_birth_rate, baseline_death_rate, s_driver_birth, s_driver_migration, max_relative_birth_rate, max_relative_migration_rate, 
 		init_pop, seed, biopsy_size_per_sample);
 	fflush(output_parameters);
 
@@ -2098,7 +2092,7 @@ void print_to_screen(float gens_elapsed, int num_cells, long t1, int num_demes, 
 	printf("Seed = %d; K = %d\n", seed, K);
 	printf("Migration type = %d, initial rate = %e, edge only = %d\n", migration_type, init_migration_rate, migration_edge_only);
 	printf("Mut rates: %f (birth), %f (mig), %f (pass)\n", mu_driver_birth, mu_driver_migration, mu_passenger);
-	printf("Mut effects: %f (birth), %f (mig), %f (pass)\n", s_driver_birth, s_driver_migration, s_passenger);
+	printf("Mut effects: %f (birth), %f (mig)\n", s_driver_birth, s_driver_migration);
 	printf("----------------------------------------------------------------\n");
 	printf("%d generations, %d iterations\n", (int)(gens_elapsed), iterations);
 	printf("%d cells, %d clones, %d genotypes, %d driver genotypes\n", num_cells, num_clones, num_matrix_cols - num_empty_cols - num_extinct_genotypes, 
@@ -2535,12 +2529,11 @@ void plot_migration_grid(FILE *gp, char *preamble_text, float gens_elapsed, int 
 /////////////////////// set rates:
 
 // set genotype birth rate:
-float set_birth_rate(int new_birth_mutations, int new_passengers, float parent_birth_rate, long *idum)
+float set_birth_rate(int new_birth_mutations, float parent_birth_rate, long *idum)
 {
 	float birth_rate = parent_birth_rate;
 	int i;
 
-	for(i = 0; i < new_passengers; i++) birth_rate = birth_rate / (1 + s_passenger);
 	if(max_relative_birth_rate >= 0) for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * (1 - birth_rate / max_relative_birth_rate) * expdev(idum));
 	else for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * expdev(idum));
 	
@@ -2877,7 +2870,7 @@ void check_rates_sum(float b0, float b1, int chosen_deme, int cell_type)
 
 void check_geno_populations(int chosen_clone, int event_type)
 {
-	if(mu_passenger == 0 && passenger_pop_threshold >= max_pop && genotype_ints[POPULATION][clone_ints[GENOTYPE][chosen_clone]] != driver_genotype_ints[POPULATION][clone_ints[DRIVER_GENOTYPE][chosen_clone]]) {
+	if(mu_passenger == 0 && genotype_ints[POPULATION][clone_ints[GENOTYPE][chosen_clone]] != driver_genotype_ints[POPULATION][clone_ints[DRIVER_GENOTYPE][chosen_clone]]) {
 		printf("Unequal populations (%d and %d) event_type = %d", genotype_ints[POPULATION][clone_ints[GENOTYPE][chosen_clone]], 
 			driver_genotype_ints[POPULATION][clone_ints[DRIVER_GENOTYPE][chosen_clone]], event_type);
 		fprintf(error_log, "Unequal populations (%d and %d) event_type = %d", genotype_ints[POPULATION][clone_ints[GENOTYPE][chosen_clone]], 
@@ -2981,7 +2974,7 @@ void check_normal_pops(int deme_index)
 void check_genotype_counts(int num_matrix_cols, int num_empty_cols, int num_extinct_genotypes, int num_driver_matrix_cols, int num_empty_driver_cols, int num_extinct_driver_genotypes, 
 	int cell_type, int event_type, int chosen_deme)
 {
-	if(mu_passenger == 0 && passenger_pop_threshold >= max_pop && num_matrix_cols - num_empty_cols - num_extinct_genotypes != num_driver_matrix_cols - num_empty_driver_cols - num_extinct_driver_genotypes) {
+	if(mu_passenger == 0 && num_matrix_cols - num_empty_cols - num_extinct_genotypes != num_driver_matrix_cols - num_empty_driver_cols - num_extinct_driver_genotypes) {
 		printf("Inequality! Iterations = %d\n; cell type = %d; event type = %d\n", iterations, cell_type, event_type);
 		printf("chosen_deme = %d; POPULATION = %d\n", chosen_deme, deme_ints[POPULATION][chosen_deme]);
 		printf("num_matrix_cols - num_empty_cols - num_extinct_genotypes = %d - %d - %d, num_driver_matrix_cols - num_empty_driver_cols - num_extinct_driver_genotypes = %d - %d - %d\n", 

@@ -220,7 +220,7 @@ void plot_passengers_grid(FILE *gp, char *preamble_text, float gens_elapsed, int
 void plot_migration_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 
 // set rates:
-float set_birth_rate(int new_birth_mutations, int new_passengers, float parent_birth_rate, long *idum);
+float set_birth_rate(int new_birth_mutations, float parent_birth_rate, long *idum);
 float set_death_rate(int deme_index, int num_cells);
 float set_migration_rate(int new_mig_mutations, float parent_mig_rate, long *idum);
 float set_migration_modifier(int normal_cells, int population);
