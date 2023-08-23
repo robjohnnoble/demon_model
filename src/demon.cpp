@@ -17,8 +17,9 @@ int **genotype_relatives;
 int **freq_table;
 float **depth_diversity;
 float **depth_diversity_bigsample;
+
 // methylation two-dim arrays:
-float **methylation_arrays;
+int **methylation_arrays;
 float **deme_methylation;
 
 // one-dim arrays:
@@ -60,6 +61,7 @@ int record_matrix; // whether to record distance matrix for all genotypes (not j
 int write_phylo; // whether to write phylo file for all genotypes (not just drivers)
 int calculate_total_diversity; // whether to calculate diversity for all genotypes (not just drivers)
 int biopsy_size_per_sample; // max number of cells per biopsy sample
+
 // methylation parameters read from config file
 int fCpG_sites_per_cell; // number of fCpG sites per cell
 float meth_rate; // rate of fCpG site methylation
@@ -80,8 +82,9 @@ int max_gens = 1000000; // needed only for creating image file names; should be 
 
 // output files:
 FILE *output_parameters, *output_pops, *output_diversities, *output_demes, *output_genotype_counts, *output_driver_genotype_counts, *output_phylo, *output_driver_phylo, *output_clones;
-FILE *output_matrix, *output_driver_matrix, *output_popgrid, *output_passengersgrid, *output_normalcellsgrid, *output_deathrates_grid, *output_birthratesgrid, *output_migrationratesgrid, *output_driversgrid;
+FILE *output_matrix, *output_driver_matrix, *output_popgrid, *output_flipsgrid, *output_normalcellsgrid, *output_deathrates_grid, *output_birthratesgrid, *output_migrationratesgrid, *output_driversgrid;
 FILE *sample_size_log, *output_allele_counts, *output_driver_allele_counts, *output_genotype_properties, *output_driver_genotype_properties;
+FILE *output_methylation_arrays, *output_deme_methylation;
 FILE *gp; // gnuplot pipe
 
 int iterations; // number of iterations (attempted cell events)
@@ -350,7 +353,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	driver_genotype_ints[NUM_METH][0] = init_meth; // number of methylation events
 	driver_genotype_ints[NUM_DEMETH][0] = init_demeth; // number of demethylation events
 	*next_driver_genotype_id = 1;
-	// set driver genotype birth and miration rates:
+	// set driver genotype birth and migration rates:
 	driver_genotype_floats[BIRTH_RATE][0] = genotype_floats[BIRTH_RATE][0];
 	driver_genotype_floats[MIGRATION_RATE][0] = genotype_floats[MIGRATION_RATE][0];
 	driver_genotype_floats[ORIGIN_TIME][0] = 0; // generation at which genotype originated
@@ -414,6 +417,32 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	// driver matrix:
 	if(matrix_max > 0) for(i=0; i<matrix_max; i++) for(j=0; j<matrix_max; j++) driver_matrix[i][j] = -99; // means that these entries of the driver matrix are not yet used
 	driver_matrix[0][0] = 0; // driver matrix comprises one entry, which is zero (the distance from the first genotype to itself)
+
+	// generate starting fCpG array
+	int fcpgs = 2 * fCpG_sites_per_cell;
+	if(manual_array == -1) {
+		for(int i = 0; i < fcpgs; i++) {
+			methylation_arrays[0][i] = ran1(idum) >= 0.5? 1:0;
+		}
+	}
+	else {
+		for(int i = 0; i < fcpgs * manual_array; i++) {
+			methylation_arrays[0][i] = 0;
+		}
+		for(int i = (int) ceil(fcpgs * manual_array); i < fcpgs; i++) {
+			methylation_arrays[0][i] = ran1(idum) >= 0.5? 1:0;	
+		}
+	}
+
+	// print starting fCpG array - testing only
+	for(int i = 0; i < fCpG_sites_per_cell; i++) {
+		printf("%d", methylation_arrays[0][i]);
+	}
+	printf("\n");
+	for(int i = fCpG_sites_per_cell; i < fcpgs; i++) {
+		printf("%d", methylation_arrays[0][i]);
+	}
+	printf("\n");
 
 	printf("Initialised\n");
 	printf("################################################################\n");
@@ -535,7 +564,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 			// periodically create images of the grid state:
 			if(gens_timer_grids >= 10 || iterations == 0) {
 				gens_timer_grids = 0;
-				grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, FALSE);
+				grids_output(preamble_text, preamble_drivers_text, preamble_flips_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, FALSE);
 			}
 
 			// calculate sum of all rates (for calculating elapsed time):
@@ -696,7 +725,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 		main_calculations_and_output(&idum, num_demes, num_matrix_cols, num_driver_matrix_cols, gens_elapsed, driver_counts, num_cells, num_clones, 1, 
 			num_samples_list, next_genotype_id, next_driver_genotype_id, event_counter, num_empty_cols, num_empty_driver_cols, num_extinct_genotypes, 
 			num_extinct_driver_genotypes, num_empty_demes, t1, 1, PHYLO_AND_POPS + DIVERSITIES + GENOPROPS);
-		grids_output(preamble_text, preamble_drivers_text, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, TRUE);
+		grids_output(preamble_text, preamble_drivers_text, preamble_flips_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, TRUE);
 	}
 
 	final_output(trial_num, num_cells, t1);
@@ -704,7 +733,7 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 
 	free(preamble_text);
 	free(preamble_drivers_text);
-	free(preamble_passengers_text);
+	free(preamble_flips_text);
 	free(buffer_text_long);
 	free(buffer_text_short);
 }
@@ -913,11 +942,12 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 		daughter_driver_geno_num = parent_driver_geno_num;
 	}
 
-	else { // it at least one daughter has at least one mutation:
+	else { // if at least one daughter has at least one mutation:
 		
 		// if only the first daughter has one or more new mutations then index = 0;
 		// if only the second daughter has one or more new mutations then index = 1;
 		// if both daughters have one or more new mutations then index = 0 and 1;
+		
 		start_index = 1;
 		if(new_mutations[0]) start_index = 0;
 		end_index = 0;
@@ -934,14 +964,14 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 				daughter_driver_geno_num = select_genotype_index(num_empty_driver_cols, num_driver_matrix_cols, empty_driver_cols);
 				daughter_driver_id = *next_driver_genotype_id;
 				create_genotype(driver_genotype_ints, driver_genotype_floats, num_driver_matrix_cols, daughter_driver_geno_num, parent_driver_geno_num, 
-					next_driver_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, new_meth[index], neew_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed);
+					next_driver_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed);
 				if(matrix_max > 0) create_column(driver_matrix, *num_driver_matrix_cols, parent_driver_geno_num, daughter_driver_geno_num, new_birth_mutations[index] + new_mig_mutations[index]);
 			}
 			else {
 				daughter_driver_geno_num = parent_driver_geno_num; // if the daughter has no driver mutations then it belongs to its parent's driver genotype
 				daughter_driver_id = driver_genotype_ints[DRIVER_IDENTITY][parent_driver_geno_num];
 			}
-			
+
 			// determine daughter genotype index (either at end of the array, or replacing an extinct entry):
 			daughter_geno_num = select_genotype_index(num_empty_cols, num_matrix_cols, empty_cols);
 			// add new column to genotype distance matrix (if required):
@@ -949,6 +979,19 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 			// create a new genotype containing only the daughter cell:
 			create_genotype(genotype_ints, genotype_floats, num_matrix_cols, daughter_geno_num, parent_geno_num, next_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, 
 				new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed);
+
+			// perform (de)methylation events:
+			de_methylate(new_meth[index], new_demeth[index], daughter_geno_num, idum);
+			// print daughter's newly generated methylation array - testing only
+			int fcpgs = 2 * fCpG_sites_per_cell;
+			for(int i = 0; i < fCpG_sites_per_cell; i++) {
+				printf("%d", methylation_arrays[daughter_geno_num][i]);
+			}
+			printf("\n");
+			for(int i = fCpG_sites_per_cell; i < fcpgs; i++) {
+				printf("%d", methylation_arrays[daughter_geno_num][i]);
+			}
+			printf("\n");
 
 			// create a clone containing only the daughter cell:
 			create_clone(daughter_geno_num, num_clones, parent_deme_num, daughter_driver_geno_num, num_demes, 1);
@@ -1118,6 +1161,46 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 	event_counter[FISSION_EVENT]++;
 }
 
+void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idum) {
+	int *daughter_array = &methylation_arrays[daughter_genotype][0];
+	int fcpgs = 2 * fCpG_sites_per_cell, no0 = 0, no1 = 0;
+
+	for(int i = 0; i < fcpgs; i++) {
+		daughter_array[i] == 0 ? no0++ : no1++;
+	}
+
+	if(new_meth > 0) {
+		// randomly choose fCpG site with value 0 to methylate and update the daughter's array:
+		int site = (int) floor(ran1(idum) * no0);
+		int count = 0;
+		for(int i = 0; i < fcpgs; i++) {
+			if(daughter_array[i] == 0) {
+				if(count == site) {
+					daughter_array[i] = 1;
+					printf("Methylated site %d\n", i+1);
+					break;
+				}
+				count++;
+			}
+		}
+	}
+	if(new_demeth) {
+		// randomly choose fCpG site with value 1 to demethylate and update the daughter's array:
+		int site = (int) floor(ran1(idum) * no1);
+		int count = 0;
+		for(int i = 0; i < fcpgs; i++) {
+			if(daughter_array[i] == 1) {
+				if(count == site) {
+					daughter_array[i] = 0;
+					printf("Demethylated site %d\n", i+1);
+					break;
+				}
+				count++;
+			}
+		}
+	}
+}
+
 ///// genotype or driver genotype:
 
 // choose numbers of mutations of each type (methylation, demethylation, birth rate, migration rate):
@@ -1183,6 +1266,9 @@ void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, i
 	geno_or_driver_ints[IMMORTAL][daughter_geno_num] = 0;
 
 	geno_or_driver_floats[ORIGIN_TIME][daughter_geno_num] = gens_elapsed;
+
+	// copy parent's methylation array into daughter's methylation array:
+	methylation_arrays[daughter_geno_num] = methylation_arrays[parent_geno_num];
 }
 
 // increment or decrement a genotype or driver genotype:
@@ -1642,6 +1728,7 @@ void assign_memory()
 	mallocArray_int(&clones_list_in_deme, max_demes, max_clones_per_deme);
 	mallocArray_float(&depth_diversity, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
 	mallocArray_float(&depth_diversity_bigsample, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
+	mallocArray_int(&methylation_arrays, max_genotypes, fCpG_sites_per_cell * 2); // 1 fCpG for each DNA strand, max_genotypes for upper bound on number of arrays
 	if(record_matrix) mallocArray_int(&matrix, matrix_max, matrix_max);
 	else mallocArray_int(&matrix, 1, 1); // if matrix isn't needed then allocate it minimal memory
 	if(use_clone_bintrees) {
@@ -1783,8 +1870,8 @@ void open_files(char *input_and_output_path)
 	output_driver_matrix=fopen(filebuff, "w+");
 	sprintf(filebuff, "%soutput_popgrid.dat", input_and_output_path);
 	output_popgrid=fopen(filebuff, "w+");
-	sprintf(filebuff, "%soutput_passengersgrid.dat", input_and_output_path);
-	output_passengersgrid=fopen(filebuff, "w+");
+	sprintf(filebuff, "%soutput_flipsgrid.dat", input_and_output_path);
+	output_flipsgrid=fopen(filebuff, "w+");
 	sprintf(filebuff, "%soutput_normalcellsgrid.dat", input_and_output_path);
 	output_normalcellsgrid=fopen(filebuff, "w+");
 	sprintf(filebuff, "%soutput_deathrates_grid.dat", input_and_output_path);
@@ -1815,7 +1902,7 @@ void open_files(char *input_and_output_path)
 
 	// check that files were successfully opened:
 	if (output_parameters == NULL || output_pops == NULL || output_diversities == NULL || output_demes == NULL || output_clones == NULL || output_genotype_counts == NULL || output_driver_genotype_counts == NULL || 
-		output_phylo == NULL || output_driver_phylo == NULL || output_matrix == NULL || output_driver_matrix == NULL || output_popgrid == NULL || output_passengersgrid == NULL || output_normalcellsgrid == NULL || 
+		output_phylo == NULL || output_driver_phylo == NULL || output_matrix == NULL || output_driver_matrix == NULL || output_popgrid == NULL || output_flipsgrid == NULL || output_normalcellsgrid == NULL || 
 		output_deathrates_grid == NULL || output_birthratesgrid == NULL || output_migrationratesgrid == NULL || output_driversgrid == NULL || error_log == NULL || sample_size_log == NULL || 
 		output_allele_counts == NULL || output_driver_allele_counts == NULL || output_genotype_properties == NULL || output_driver_genotype_properties == NULL ||
 		output_deme_methylation == NULL || output_methylation_arrays == NULL) {
@@ -2009,20 +2096,20 @@ void main_calculations_and_output(long *idum, int num_demes, int num_matrix_cols
 }
 
 // write and/or plot grids:
-void grids_output(char *preamble_text, char *preamble_drivers_text, char *preamble_passengers_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, 
+void grids_output(char *preamble_text, char *preamble_drivers_text, char *preamble_flips_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, 
 	char *buffer_text_short, char *buffer_text_long, bool to_file)
 {
 	if(write_grid) {
 		plot_birth_rate_grid(gp, preamble_text, gens_elapsed, num_clones, input_and_output_path, buffer_text_short, buffer_text_long);
 		plot_drivers_grid(gp, preamble_drivers_text, gens_elapsed, input_and_output_path, buffer_text_short, buffer_text_long);
 		plot_pops_grid(gp, preamble_text, gens_elapsed, input_and_output_path, buffer_text_short, buffer_text_long);
-		plot_passengers_grid(gp, preamble_passengers_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long);
+		plot_flips_grid(gp, preamble_flips_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long);
 		plot_migration_grid(gp, preamble_text, gens_elapsed, num_clones, input_and_output_path, buffer_text_short, buffer_text_long);
 	}
 
 	if(to_file) {
 		write_pops_grid_to_file(output_popgrid);
-		write_passengers_grid_to_file(output_passengersgrid, num_clones, num_demes);
+		write_flips_grid_to_file(output_flipsgrid, num_clones, num_demes);
 		write_normalcells_grid_to_file(output_normalcellsgrid);
 		write_deathrates_grid_to_file(output_deathrates_grid);
 		write_rates_grid_to_file(output_birthratesgrid, deme_doubles[SUM_BIRTH_RATES], deme_ints[POPULATION]);
@@ -2082,7 +2169,7 @@ void close_files()
 	fclose(output_matrix);
 	fclose(output_driver_matrix);
 	fclose(output_popgrid);
-	fclose(output_passengersgrid);
+	fclose(output_flipsgrid);
 	fclose(output_normalcellsgrid);
 	fclose(output_deathrates_grid);
 	fclose(output_birthratesgrid);
@@ -2266,32 +2353,31 @@ void write_pops_grid_to_file(FILE *output_popgrid)
 		}
 }
 
-// write grid of mean passenger mutation counts to file:
-// NOTE: Need separate file for methylations and demethylations - could have one file for total flips??
-void write_passengers_grid_to_file(FILE *output_passengersgrid, int num_clones, int num_demes)
+// write grid of mean number of flips (both methylation and demethylation) to file:
+void write_flips_grid_to_file(FILE *output_flipsgrid, int num_clones, int num_demes)
 {
 	int i, j;
-	int clone_num, clone_index, deme_num, geno_num, passenger_count, deme_pop;
+	int clone_num, clone_index, deme_num, geno_num, flips_count, deme_pop;
 
 	for(i=0; i<dim_grid; i++) {
 		for(j=0; j<dim_grid; j++) {
 			deme_num = grid[i][j];
 			
-			if(deme_num == EMPTY) fprintf(output_passengersgrid, "NA");
-			else if(deme_ints[POPULATION][deme_num] == 0) fprintf(output_passengersgrid, "NA");
+			if(deme_num == EMPTY) fprintf(output_flipsgrid, "NA");
+			else if(deme_ints[POPULATION][deme_num] == 0) fprintf(output_flipsgrid, "NA");
 			else {
 				deme_pop = deme_ints[POPULATION][deme_num];
-				passenger_count = 0;
+				flips_count = 0;
 				for(clone_num=0; clone_num<deme_ints[NUM_CLONES_IN_DEME][deme_num]; clone_num++) {
 					clone_index = clones_list_in_deme[deme_num][clone_num];
 					geno_num = clone_ints[GENOTYPE][clone_index];
-					passenger_count += clone_ints[POPULATION][clone_index] * genotype_ints[NUM_PASSENGER_MUTATIONS][geno_num];
+					flips_count += clone_ints[POPULATION][clone_index] * (genotype_ints[NUM_METH][geno_num] + genotype_ints[NUM_DEMETH][geno_num]);
 				}
-				fprintf(output_passengersgrid, "%f", (float)passenger_count / deme_pop);
+				fprintf(output_flipsgrid, "%f", (float)flips_count / deme_pop);
 			}
-			if(j < dim_grid - 1) fprintf(output_passengersgrid, "\t");
+			if(j < dim_grid - 1) fprintf(output_flipsgrid, "\t");
 		}
-		fprintf(output_passengersgrid, "\n");
+		fprintf(output_flipsgrid, "\n");
 	}
 }
 
@@ -2476,17 +2562,17 @@ void plot_pops_grid(FILE *gp, char *preamble_text, float gens_elapsed, char *inp
 	fprintf(gp, "e\n");
 }
 
-// create grid image, coloured by number of passenger mutations:
-void plot_passengers_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, 
+// create grid image, coloured by number of flips (both methylation and demethylation):
+void plot_flips_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, 
 	char *buffer_text_short, char *buffer_text_long)
 {
 	int i,j;
 	float val_to_write, buff;
-	int clone_num, clone_index, deme_num, geno_num, passenger_count, deme_pop;
+	int clone_num, clone_index, deme_num, geno_num, flip_count, deme_pop;
 
 	fprintf(gp, "set terminal png\n");
 	fprintf(gp, "set output '");
-	fprintf(gp, "%sPassengersGrids/passengers_grid%s%d.png'\n", input_and_output_path, zeroes((int)(gens_elapsed), max_gens, buffer_text_short, buffer_text_long), 
+	fprintf(gp, "%sFlipGrids/flips_grid%s%d.png'\n", input_and_output_path, zeroes((int)(gens_elapsed), max_gens, buffer_text_short, buffer_text_long), 
 		(int)(gens_elapsed));
 	fprintf(gp, preamble_text, 0);
 
@@ -2497,13 +2583,13 @@ void plot_passengers_grid(FILE *gp, char *preamble_text, float gens_elapsed, int
 			else if(deme_ints[POPULATION][grid[i][j]] == 0) val_to_write = 4.5; // empty
 			else {
 				deme_pop = deme_ints[POPULATION][deme_num];
-				passenger_count = 0;
+				flip_count = 0;
 				for(clone_num=0; clone_num<deme_ints[NUM_CLONES_IN_DEME][deme_num]; clone_num++) {
 					clone_index = clones_list_in_deme[deme_num][clone_num];
 					geno_num = clone_ints[GENOTYPE][clone_index];
-					passenger_count += clone_ints[POPULATION][clone_index] * genotype_ints[NUM_PASSENGER_MUTATIONS][geno_num];
+					flip_count += clone_ints[POPULATION][clone_index] * (genotype_ints[NUM_METH][geno_num] + genotype_ints[NUM_DEMETH][geno_num]);
 				}
-				buff = 0.5 * (float)passenger_count / deme_pop;
+				buff = 0.5 * (float)flip_count / deme_pop;
 				val_to_write = MIN(3.99, buff);
 			}
 			sprintf(buffer_text_short, "%f ", val_to_write); // write its state

@@ -149,6 +149,7 @@ void cell_migration(int *event_counter, int parent_deme_num, long *idum, int *nu
 	int *num_extinct_genotypes, int *num_extinct_driver_genotypes);
 void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_demes, int *num_clones, int *num_cells, int *num_empty_demes, int *num_empty_cols, int *num_empty_driver_cols, 
 	int *empty_cols, int *empty_driver_cols, int *num_extinct_genotypes, int *num_extinct_driver_genotypes, int num_matrix_cols);
+void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idum);
 
 // genotype and driver genotype events (lower level):
 void choose_number_mutations(int *new_meth, int *new_demeth, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum);
@@ -209,7 +210,7 @@ void write_frequency_table(FILE *output_allele_counts, int **freq_table, int num
 void write_genotypes(FILE *output_genotype_properties, int num_matrix_cols, int *allele_count, int **genotype_or_driver_ints, float **genotype_or_driver_floats);
 void write_matrix_to_file(FILE *output_matrix, int **either_matrix, int num_matrix_cols);
 void write_pops_grid_to_file(FILE *output_popgrid);
-void write_passengers_grid_to_file(FILE *output_passengersgrid, int num_clones, int num_demes);
+void write_flips_grid_to_file(FILE *output_flipsgrid, int num_clones, int num_demes);
 void write_normalcells_grid_to_file(FILE *output_normalcellsgrid);
 void write_deathrates_grid_to_file(FILE *output_deathrates_grid);
 void write_rates_grid_to_file(FILE *output, double *deme_rates, int *deme_pops);
@@ -217,7 +218,7 @@ void write_drivers_grid_to_file(FILE *output);
 void plot_birth_rate_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 void plot_drivers_grid(FILE *gp, char *preamble_drivers_text, float gens_elapsed, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 void plot_pops_grid(FILE *gp, char *preamble_text, float gens_elapsed, char *input_and_output_path, char *buffer_text_short, char * buffer_text_long);
-void plot_passengers_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
+void plot_flips_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 void plot_migration_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 
 // set rates:
