@@ -434,7 +434,8 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 		}
 	}
 
-	// print starting fCpG array - testing only
+	/* print starting fCpG array - testing only
+	printf("INITIAL ARRAY:\n");
 	for(int i = 0; i < fCpG_sites_per_cell; i++) {
 		printf("%d", methylation_arrays[0][i]);
 	}
@@ -443,6 +444,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 		printf("%d", methylation_arrays[0][i]);
 	}
 	printf("\n");
+	*/
 
 	printf("Initialised\n");
 	printf("################################################################\n");
@@ -964,7 +966,7 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 				daughter_driver_geno_num = select_genotype_index(num_empty_driver_cols, num_driver_matrix_cols, empty_driver_cols);
 				daughter_driver_id = *next_driver_genotype_id;
 				create_genotype(driver_genotype_ints, driver_genotype_floats, num_driver_matrix_cols, daughter_driver_geno_num, parent_driver_geno_num, 
-					next_driver_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed);
+					next_driver_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed, idum);
 				if(matrix_max > 0) create_column(driver_matrix, *num_driver_matrix_cols, parent_driver_geno_num, daughter_driver_geno_num, new_birth_mutations[index] + new_mig_mutations[index]);
 			}
 			else {
@@ -978,23 +980,12 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 			if(record_matrix) create_column(matrix, *num_matrix_cols, parent_geno_num, daughter_geno_num, new_mutations[index]);
 			// create a new genotype containing only the daughter cell:
 			create_genotype(genotype_ints, genotype_floats, num_matrix_cols, daughter_geno_num, parent_geno_num, next_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, 
-				new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed);
+				new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed, idum);
 
-			// perform (de)methylation events:
-			de_methylate(new_meth[index], new_demeth[index], daughter_geno_num, idum);
-			// print daughter's newly generated methylation array - testing only
-			int fcpgs = 2 * fCpG_sites_per_cell;
-			for(int i = 0; i < fCpG_sites_per_cell; i++) {
-				printf("%d", methylation_arrays[daughter_geno_num][i]);
-			}
-			printf("\n");
-			for(int i = fCpG_sites_per_cell; i < fcpgs; i++) {
-				printf("%d", methylation_arrays[daughter_geno_num][i]);
-			}
-			printf("\n");
 
 			// create a clone containing only the daughter cell:
 			create_clone(daughter_geno_num, num_clones, parent_deme_num, daughter_driver_geno_num, num_demes, 1);
+
 			if(exit_code != 0) return;
 			// record the daughter's new clone number (for use in subsequent functions):
 			daughter_clone_nums[index] = *num_clones - 1;
@@ -1169,7 +1160,7 @@ void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idu
 		daughter_array[i] == 0 ? no0++ : no1++;
 	}
 
-	if(new_meth > 0) {
+	if(new_meth) {
 		// randomly choose fCpG site with value 0 to methylate and update the daughter's array:
 		int site = (int) floor(ran1(idum) * no0);
 		int count = 0;
@@ -1177,7 +1168,7 @@ void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idu
 			if(daughter_array[i] == 0) {
 				if(count == site) {
 					daughter_array[i] = 1;
-					printf("Methylated site %d\n", i+1);
+					//printf("Methylated site %d\n", i+1);
 					break;
 				}
 				count++;
@@ -1192,7 +1183,7 @@ void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idu
 			if(daughter_array[i] == 1) {
 				if(count == site) {
 					daughter_array[i] = 0;
-					printf("Demethylated site %d\n", i+1);
+					//printf("Demethylated site %d\n", i+1);
 					break;
 				}
 				count++;
@@ -1236,7 +1227,7 @@ int select_genotype_index(int *num_empty_cols, int *num_matrix_cols, int *empty_
 
 // create a new genotype or driver genotype:
 void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int *num_matrix_cols, int daughter_geno_num, int parent_geno_num, int *next_genotype_id, int daughter_driver_id, 
-	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int new_birth_mutations, int new_mig_mutations, float gens_elapsed)
+	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int new_birth_mutations, int new_mig_mutations, float gens_elapsed, long *idum)
 {
 	// create new genotype:
 	geno_or_driver_ints[POPULATION][daughter_geno_num] = 1; // initialise population
@@ -1268,7 +1259,34 @@ void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, i
 	geno_or_driver_floats[ORIGIN_TIME][daughter_geno_num] = gens_elapsed;
 
 	// copy parent's methylation array into daughter's methylation array:
-	methylation_arrays[daughter_geno_num] = methylation_arrays[parent_geno_num];
+	for (int i = 0; i < 2*fCpG_sites_per_cell; i++) {
+ 		methylation_arrays[daughter_geno_num][i] = methylation_arrays[parent_geno_num][i];
+	}
+
+	// perform (de)methylation events:
+	de_methylate(new_meth, new_demeth, daughter_geno_num, idum);
+	/* print daughter's newly generated methylation array - testing only
+	int fcpgs = 2 * fCpG_sites_per_cell;
+	printf("parent: %d\n", parent_geno_num);
+	for(int i = 0; i < fCpG_sites_per_cell; i++) {
+		printf("%d", methylation_arrays[parent_geno_num][i]);
+	}
+	printf("\n");
+	for(int i = fCpG_sites_per_cell; i < fcpgs; i++) {
+		printf("%d", methylation_arrays[parent_geno_num][i]);
+	}
+	printf("\n");
+	printf("daughter: %d, meth/demeth: %d/%d\n", daughter_geno_num, new_meth, new_demeth);
+	for(int i = 0; i < fCpG_sites_per_cell; i++) {
+		printf("%d", methylation_arrays[daughter_geno_num][i]);
+	}
+	printf("\n");
+	for(int i = fCpG_sites_per_cell; i < fcpgs; i++) {
+		printf("%d", methylation_arrays[daughter_geno_num][i]);
+	}
+	printf("\n");
+	*/
+			
 }
 
 // increment or decrement a genotype or driver genotype:
@@ -1728,7 +1746,7 @@ void assign_memory()
 	mallocArray_int(&clones_list_in_deme, max_demes, max_clones_per_deme);
 	mallocArray_float(&depth_diversity, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
 	mallocArray_float(&depth_diversity_bigsample, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
-	mallocArray_int(&methylation_arrays, max_genotypes, fCpG_sites_per_cell * 2); // 1 fCpG for each DNA strand, max_genotypes for upper bound on number of arrays
+	mallocArray_int(&methylation_arrays, max_clones, fCpG_sites_per_cell * 2); // 1 fCpG for each DNA strand, max_clones for upper bound on number of arrays
 	if(record_matrix) mallocArray_int(&matrix, matrix_max, matrix_max);
 	else mallocArray_int(&matrix, 1, 1); // if matrix isn't needed then allocate it minimal memory
 	if(use_clone_bintrees) {
@@ -1788,6 +1806,7 @@ void assign_memory()
 // free memory:
 void free_memory()
 {
+	//freeArray_int(methylation_arrays, fCpG_sites_per_cell * 2);
 	freeArray_int(clone_ints, NUM_CLONE_INT_PROPS);
 	freeArray_float(genotype_floats, NUM_GENOTYPE_FLOAT_PROPS);
 	freeArray_float(driver_genotype_floats, NUM_GENOTYPE_FLOAT_PROPS);
@@ -1957,7 +1976,7 @@ void initiate_files(int *num_samples_list)
 	// write column names to other output files:
 	fprintf(output_demes, "Generation\tX\tY\tPopulation\tNormalCells\tDeathRate\tDiversity\tDriverDiversity\n");
 	fprintf(output_clones, "Generation\tClone\tDeme\tGenotype\tDriverGenotype\tParent\tDriverParent\tX\tY\tNormalCells\tPopulation\tBirthRate\t");
-	fprintf(output_clones, "MigrationRate\tDeathRate\tMigrationModifier\tDriverMutations\tMigrationMutations\tMethylations\tDemethylations\n");
+	fprintf(output_clones, "MigrationRate\tDeathRate\tMigrationModifier\tDriverMutations\tMigrationMutations\tMethylations\tDemethylations\tMethylationArray\n");
 	fprintf(output_phylo, "NumCells\tNumSamples\tCellsPerSample\tSampleDepth\tGeneration\tIdentity\tParent\tPopulation\tBirthRate\tMigrationRate\tOriginTime\tDriverMutations\tMigrationMutations\tMethylations\tDemethylations\n");
 	fprintf(output_driver_phylo, "NumCells\tNumSamples\tCellsPerSample\tSampleDepth\tGeneration\tIdentity\tDriverIdentity\tParent\tPopulation\tBirthRate\tMigrationRate\tOriginTime\tDriverMutations\tMigrationMutations\tMethylations\tDemethylations\n");
 	fprintf(sample_size_log, "Generation\tNumSamples\tDepth\tTargetSampleSize\tActualSampleSize\n");
@@ -1968,7 +1987,7 @@ void initiate_files(int *num_samples_list)
 	fprintf(output_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tMethylations\tDemethylations\tBirthRate\tMigrationRate\tOriginTime\tDescendants\n");
 	fprintf(output_driver_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tMethylations\tDemethylations\tBirthRate\tMigrationRate\tOriginTime\tDescendants\n");
 
-	fprintf(output_methylation_arrays, "Identity\tArray\n");
+	fprintf(output_methylation_arrays, "Identity\tPopulation\tNumMeth\tNumDemeth\tArray\n");
 	fprintf(output_deme_methylation, "X\tY\tAverageArray\n");
 }
 
@@ -1994,7 +2013,7 @@ void main_calculations_and_output(long *idum, int num_demes, int num_matrix_cols
 		num_demes, num_matrix_cols, gens_elapsed);
 
 	// calculate means and variances of numbers of mutations per cell:
-	calculate_mutation_metrics(&mean_num_meth, &mean_num_demeth, &mean_num_drivers, &var_num_meth, &mean_num_demeth, &var_num_drivers, driver_counts, num_matrix_cols, num_cells);
+	calculate_mutation_metrics(&mean_num_meth, &mean_num_demeth, &mean_num_drivers, &var_num_meth, &var_num_demeth, &var_num_drivers, driver_counts, num_matrix_cols, num_cells);
 
 	// calculate variance of cell birth and migration rates:
 	variance_birth_rate = calculate_variance_of_rate(num_matrix_cols, num_cells, sum_birth_rates, genotype_floats[BIRTH_RATE]);
@@ -2039,6 +2058,9 @@ void main_calculations_and_output(long *idum, int num_demes, int num_matrix_cols
 		// write to other output files:
 		write_other_files(output_demes, output_clones, output_genotype_counts, output_driver_genotype_counts, output_phylo, gens_elapsed, num_demes, num_matrix_cols, num_driver_matrix_cols, num_clones, 
 			within_deme_diversity, within_deme_driver_diversity, num_cells);
+		
+		int fcpgs = 2 * fCpG_sites_per_cell;
+		write_output_methylation(output_methylation_arrays, num_matrix_cols, fcpgs, allele_count);
 
 		if(meth_rate > 0 && demeth_rate > 0) {
 			get_relatives(num_matrix_cols, next_genotype_id, genotype_ints);
@@ -2181,6 +2203,8 @@ void close_files()
 	fclose(output_driver_allele_counts);
 	fclose(output_genotype_properties);
 	fclose(output_driver_genotype_properties);
+	fclose(output_methylation_arrays);
+	fclose(output_deme_methylation);
 }
 
 /////////////////////// write system state to screen or file:
@@ -2285,15 +2309,28 @@ void write_other_files(FILE *output_demes, FILE *output_clones, FILE *output_gen
 		geno_num = clone_ints[GENOTYPE][i];
 		driver_geno_num = clone_ints[DRIVER_GENOTYPE][i];
 		deme_num = clone_ints[DEME][i];
-		fprintf(output_clones, "%f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%d\t%d\t%d\t%d\n", gens_elapsed, i, deme_num, genotype_ints[IDENTITY][geno_num], 
+		fprintf(output_clones, "%f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%d\t%d\t%d\t%d\t", gens_elapsed, i, deme_num, genotype_ints[IDENTITY][geno_num], 
 			driver_genotype_ints[IDENTITY][driver_geno_num], genotype_ints[PARENT][geno_num], driver_genotype_ints[PARENT][driver_geno_num], 
 			deme_ints[XCOORD][deme_num], deme_ints[YCOORD][deme_num], deme_ints[NORMAL_CELLS][deme_num], clone_ints[POPULATION][i], genotype_floats[BIRTH_RATE][geno_num], 
 			genotype_floats[MIGRATION_RATE][geno_num], deme_floats[DEATH_RATE][deme_num], deme_floats[MIGRATION_MODIFIER][deme_num], genotype_ints[NUM_DRIVER_MUTATIONS][geno_num], 
 			genotype_ints[NUM_MIGRATION_MUTATIONS][geno_num], genotype_ints[NUM_METH][geno_num], genotype_ints[NUM_DEMETH][geno_num]);
+		for(int j = 0; j < 2 * fCpG_sites_per_cell; j++) fprintf(output_clones, "%d", methylation_arrays[geno_num][j]);
+		fprintf(output_clones, "\n");
 	}
 
 	// write phylogenetic data of genotypes to file:
 	if(write_phylo > 0) write_output_phylo(output_phylo, num_matrix_cols, gens_elapsed, genotype_ints[POPULATION], genotype_ints, genotype_floats, 1, -1, -1, num_cells);
+}
+
+//write methylation arrays and deme averages to file:
+void write_output_methylation(FILE* output, int num_cols, int fcpgs, int *allele_count) {
+	int i, j;
+
+	for(i = 0; i < num_cols; i++) if(allele_count[i] > 0){
+		fprintf(output, "%d\t%d\t%d\t%d\t", genotype_ints[IDENTITY][i], genotype_ints[POPULATION][i], genotype_ints[NUM_METH][i], genotype_ints[NUM_DEMETH][i]);
+		for(j = 0; j < fcpgs; j++) fprintf(output, "%d", methylation_arrays[i][j]);
+		fprintf(output, "\n");
+	}
 }
 
 // write phylogenetic data of genotypes to file:

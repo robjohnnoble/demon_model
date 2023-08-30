@@ -54,8 +54,9 @@
 #define GENOTYPE 2 // index of the genotype of the clone
 #define DRIVER_GENOTYPE 3 // index of the driver genotype of the clone
 #define INDEX_IN_DEME 4 // index of the clone within its deme
+#define METH_ARRAY 5 // fCpG array of the clone
 
-#define NUM_CLONE_INT_PROPS 5
+#define NUM_CLONE_INT_PROPS 6
 
 ///// genotype and driver genotype:
 //POPULATION already defined as 0
@@ -155,7 +156,7 @@ void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idu
 void choose_number_mutations(int *new_meth, int *new_demeth, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum);
 int select_genotype_index(int *num_empty_cols, int *num_matrix_cols, int *empty_cols);
 void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int *num_matrix_cols, int daughter_geno_num, int parent_geno_num, int *next_genotype_id, int daughter_driver_id, 
-	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int new_birth_mutations, int new_mig_mutations, float gens_elapsed);
+	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int new_birth_mutations, int new_mig_mutations, float gens_elapsed, long *idum);
 void increment_or_decrement_genotype(int **geno_or_driver_ints, int parent_geno_num, int *empty_cols, int *num_empty_cols, int change, int *num_extinct_genotypes);
 void create_column(int **either_matrix, int num_matrix_cols, int parent_geno_num, int daughter_geno_num, int num_mutations);
 
@@ -220,6 +221,8 @@ void plot_drivers_grid(FILE *gp, char *preamble_drivers_text, float gens_elapsed
 void plot_pops_grid(FILE *gp, char *preamble_text, float gens_elapsed, char *input_and_output_path, char *buffer_text_short, char * buffer_text_long);
 void plot_flips_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 void plot_migration_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
+
+void write_output_methylation(FILE* output, int num_cols, int fcpgs, int *allele_count);
 
 // set rates:
 float set_birth_rate(int new_birth_mutations, float parent_birth_rate, long *idum);
