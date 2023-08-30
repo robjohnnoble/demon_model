@@ -1265,28 +1265,6 @@ void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, i
 
 	// perform (de)methylation events:
 	de_methylate(new_meth, new_demeth, daughter_geno_num, idum);
-	/* print daughter's newly generated methylation array - testing only
-	int fcpgs = 2 * fCpG_sites_per_cell;
-	printf("parent: %d\n", parent_geno_num);
-	for(int i = 0; i < fCpG_sites_per_cell; i++) {
-		printf("%d", methylation_arrays[parent_geno_num][i]);
-	}
-	printf("\n");
-	for(int i = fCpG_sites_per_cell; i < fcpgs; i++) {
-		printf("%d", methylation_arrays[parent_geno_num][i]);
-	}
-	printf("\n");
-	printf("daughter: %d, meth/demeth: %d/%d\n", daughter_geno_num, new_meth, new_demeth);
-	for(int i = 0; i < fCpG_sites_per_cell; i++) {
-		printf("%d", methylation_arrays[daughter_geno_num][i]);
-	}
-	printf("\n");
-	for(int i = fCpG_sites_per_cell; i < fcpgs; i++) {
-		printf("%d", methylation_arrays[daughter_geno_num][i]);
-	}
-	printf("\n");
-	*/
-			
 }
 
 // increment or decrement a genotype or driver genotype:
@@ -1746,7 +1724,7 @@ void assign_memory()
 	mallocArray_int(&clones_list_in_deme, max_demes, max_clones_per_deme);
 	mallocArray_float(&depth_diversity, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
 	mallocArray_float(&depth_diversity_bigsample, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
-	mallocArray_int(&methylation_arrays, max_clones, fCpG_sites_per_cell * 2); // 1 fCpG for each DNA strand, max_clones for upper bound on number of arrays
+	mallocArray_int(&methylation_arrays, max_genotypes, fCpG_sites_per_cell * 2); // 1 fCpG for each DNA strand, max_clones for upper bound on number of arrays
 	if(record_matrix) mallocArray_int(&matrix, matrix_max, matrix_max);
 	else mallocArray_int(&matrix, 1, 1); // if matrix isn't needed then allocate it minimal memory
 	if(use_clone_bintrees) {
