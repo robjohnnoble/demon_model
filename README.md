@@ -1,5 +1,5 @@
-# demon
-Demon (deme-based oncology model) is a flexible framework for modelling intra-tumour population genetics with varied spatial structures and modes of cell dispersal.
+# methdemon
+MethDemon (flucutating **meth**ylation clock **dem**e-based **on**cology model) is a flexible framework for simulating fluctuating CpG loci in a growing cancer cell population.
 
 ## Prerequisites
 
@@ -37,18 +37,21 @@ Dispersal
 
 Mutation rates
 * `float mu_driver_birth`: driver mutation rate per cell division (for drivers affecting division rate)
-* `float mu_passenger`: passenger mutation rate per cell division
 * `float mu_driver_migration`: driver mutation rate per cell division (for drivers affecting dispersal rate)
-* `int passenger_pop_threshold`: population size at which passenger mutations stop occurring (-1 = no threshold)
 
 Fitness effects
 * `float normal_birth_rate`: normal cell division rate, relative to tumour cell division rate (-1 = no normal cells)
 * `float baseline_death_rate`: baseline death rate, independent of deme population size
-* `float s_passenger`: deleterious effect on division rate per passenger mutation
 * `float s_driver_birth`: beneficial effect on division rate per driver mutation (for drivers affecting division rate)
 * `float s_driver_migration`: beneficial effect on dispersal rate per driver mutation (for drivers affecting dispersal rate)
 * `float max_relative_birth_rate`: maximum division rate, relative to initial division rate
 * `float max_relative_migration_rate`: maximum dispersal rate, relative to initial dispersal rate
+
+Fluctuating methylation arrays
+* `float meth_rate`: rate of fCpG site methylation
+* `float demeth_rate`: rate of fCpG site demethylation
+* `int fCpG_sites_per_cell`: number of fluctuating loci per cell
+* `float manual_array`: proportion of loci in a homogeneous unmethylated state in the initial array (-1 for all random values)
 
 Non-biological parameters
 * `int seed`: seed for pseudo-random number generator
