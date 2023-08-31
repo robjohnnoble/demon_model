@@ -249,7 +249,7 @@ void read_parameters(boost::property_tree::ptree pt)
 
 	max_driver_mu = MAX(mu_driver_migration, mu_driver_birth);
 	
-	max_genotypes = MIN(400 * max_driver_mu * max_pop, 1e8);
+	max_genotypes = MIN(400 * MAX(max_driver_mu * max_pop, (meth_rate + demeth_rate) * max_pop), 1e8);
 	max_genotypes = MAX(max_genotypes, 10);
 	
 	if(matrix_max <= 0) max_driver_genotypes = MIN(400 * max_driver_mu * max_pop, 1e8);
