@@ -61,9 +61,8 @@ Non-biological parameters
 * `int max_generations`: max cell generations before program halts
 * `int matrix_max`: max number of genotypes before program halts (larger value => more allocated memory)
 * `int write_grid`: whether to generate plots of grid states during execution (can significantly increase running time)
-* `int write_clones_file`: whether to write contents of all clones with their methylation arrays (can be a very large file; typically unnecessary)
-* `int write_demes_file`: whether to write contents of all demes (can be a very large file; typically unnecessary)
-* `int write_meth_arrays`: whether to write each methylation array to an output file (can be a very large file)
+* `int write_clones_file`: whether to write contents of all clones with their methylation arrays (time series going by generation; can be a very large file; typically unnecessary)
+* `int write_demes_file`: whether to write contents of all demes with their average methylation arrays (time series going by generation; can be a very large file; typically unnecessary)
 * `int record_matrix`: whether to record genetic distance matrix for all genotypes (can be a very large file; typically unnecessary)
 * `int write_phylo`: whether to write phylogeny for all genotypes (can be a very large file; typically unnecessary)
 * `int calculate_total_diversity`: whether to calculate diversity across all genotypes (can be computationally expensive)
