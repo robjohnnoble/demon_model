@@ -222,7 +222,7 @@ void plot_pops_grid(FILE *gp, char *preamble_text, float gens_elapsed, char *inp
 void plot_flips_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 void plot_migration_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 
-void write_output_methylation(FILE* output, int num_cols, int fcpgs, int *allele_count);
+void write_output_methylation(FILE* output, int num_cols, int *allele_count);
 
 // set rates:
 float set_birth_rate(int new_birth_mutations, float parent_birth_rate, long *idum);

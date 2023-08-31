@@ -57,6 +57,7 @@ int seed; // seed for random number generator
 int write_grid; // whether to plot grids using gnuplot
 int write_clones_file; // whether to write clones file
 int write_demes_file; // whether to write demes file
+int write_meth_arrays; //whether to write the methylation arrays time series
 int record_matrix; // whether to record distance matrix for all genotypes (not just driver genotypes)
 int write_phylo; // whether to write phylo file for all genotypes (not just drivers)
 int calculate_total_diversity; // whether to calculate diversity for all genotypes (not just drivers)
@@ -70,6 +71,7 @@ float manual_array; // percentage of homogeneously demethylated loci in initial 
 
 // derived parameters:
 int K; // deme carrying capacity
+int fcpgs; // total number of fCpG sites (2 * fCpG_sites_per_cell)
 int max_pop, max_demes, dim_grid, max_clones_per_deme, max_genotypes, max_driver_genotypes, max_clones, max_distinct_allele_freqs, length_of_max_layer_needed_array;
 int well_mixed; // whether the model is being run within a single deme (depends on other parameter values)
 int filled_grid; // whether the grid is initially fully occupied by cancer cells
@@ -193,11 +195,13 @@ void read_parameters(boost::property_tree::ptree pt)
 	write_grid = pt.get <int> ("parameters.non_biological_parameters.write_grid"); // whether to create images of the grid state
 	write_demes_file = pt.get <int> ("parameters.non_biological_parameters.write_demes_file"); // whether to write deme states to file
 	write_clones_file = pt.get <int> ("parameters.non_biological_parameters.write_clones_file"); // whether to write clone states to file
+	write_meth_arrays = pt.get <int> ("parameters.non_biological_parameters.write_meth_arrays"); // whether to write the methylation arrays time series
 	write_phylo = pt.get <int> ("parameters.non_biological_parameters.write_phylo"); // whether to write phylogeny for all genotypes (not just driver genotypes) 
 	calculate_total_diversity = pt.get <int> ("parameters.non_biological_parameters.calculate_total_diversity"); // whether to calculate diversity across all genotypes (not just driver genotypes) 
 	matrix_max = pt.get <int> ("parameters.non_biological_parameters.matrix_max"); // maximum number of matrix columns (for assigning memory)
 
 	K = pow(2, log2_deme_carrying_capacity); // deme carrying capacity
+	fcpgs = 2 * fCpG_sites_per_cell;
 
 	if(mu_driver_birth < 0) mu_driver_birth = pow(10, mu_driver_birth);
 	if(mu_driver_migration < 0) mu_driver_migration = pow(10, mu_driver_migration);
@@ -419,7 +423,6 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	driver_matrix[0][0] = 0; // driver matrix comprises one entry, which is zero (the distance from the first genotype to itself)
 
 	// generate starting fCpG array
-	int fcpgs = 2 * fCpG_sites_per_cell;
 	if(manual_array == -1) {
 		for(int i = 0; i < fcpgs; i++) {
 			methylation_arrays[0][i] = ran1(idum) >= 0.5? 1:0;
@@ -1154,7 +1157,7 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 
 void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idum) {
 	int *daughter_array = &methylation_arrays[daughter_genotype][0];
-	int fcpgs = 2 * fCpG_sites_per_cell, no0 = 0, no1 = 0;
+	int no0 = 0, no1 = 0;
 
 	for(int i = 0; i < fcpgs; i++) {
 		daughter_array[i] == 0 ? no0++ : no1++;
@@ -2037,9 +2040,6 @@ void main_calculations_and_output(long *idum, int num_demes, int num_matrix_cols
 		write_other_files(output_demes, output_clones, output_genotype_counts, output_driver_genotype_counts, output_phylo, gens_elapsed, num_demes, num_matrix_cols, num_driver_matrix_cols, num_clones, 
 			within_deme_diversity, within_deme_driver_diversity, num_cells);
 		
-		int fcpgs = 2 * fCpG_sites_per_cell;
-		write_output_methylation(output_methylation_arrays, num_matrix_cols, fcpgs, allele_count);
-
 		if(meth_rate > 0 && demeth_rate > 0) {
 			get_relatives(num_matrix_cols, next_genotype_id, genotype_ints);
 			get_allele_frequencies(num_matrix_cols, allele_count, genotype_ints);
@@ -2296,12 +2296,16 @@ void write_other_files(FILE *output_demes, FILE *output_clones, FILE *output_gen
 		fprintf(output_clones, "\n");
 	}
 
+	if(write_meth_arrays) {
+		write_output_methylation(output_methylation_arrays, num_matrix_cols, allele_count);
+	}
+
 	// write phylogenetic data of genotypes to file:
 	if(write_phylo > 0) write_output_phylo(output_phylo, num_matrix_cols, gens_elapsed, genotype_ints[POPULATION], genotype_ints, genotype_floats, 1, -1, -1, num_cells);
 }
 
 //write methylation arrays and deme averages to file:
-void write_output_methylation(FILE* output, int num_cols, int fcpgs, int *allele_count) {
+void write_output_methylation(FILE* output, int num_cols, int *allele_count) {
 	int i, j;
 
 	for(i = 0; i < num_cols; i++) if(allele_count[i] > 0){
