@@ -43,7 +43,6 @@ parameters
         write_grid 0
         write_clones_file 0
         write_demes_file 0
-        write_meth_arrays 0
         record_matrix 0
         write_phylo 0
         calculate_total_diversity 0

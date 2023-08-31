@@ -57,7 +57,6 @@ int seed; // seed for random number generator
 int write_grid; // whether to plot grids using gnuplot
 int write_clones_file; // whether to write clones file
 int write_demes_file; // whether to write demes file
-int write_meth_arrays; //whether to write the methylation arrays time series
 int record_matrix; // whether to record distance matrix for all genotypes (not just driver genotypes)
 int write_phylo; // whether to write phylo file for all genotypes (not just drivers)
 int calculate_total_diversity; // whether to calculate diversity for all genotypes (not just drivers)
@@ -87,6 +86,7 @@ FILE *output_parameters, *output_pops, *output_diversities, *output_demes, *outp
 FILE *output_matrix, *output_driver_matrix, *output_popgrid, *output_flipsgrid, *output_normalcellsgrid, *output_deathrates_grid, *output_birthratesgrid, *output_migrationratesgrid, *output_driversgrid;
 FILE *sample_size_log, *output_allele_counts, *output_driver_allele_counts, *output_genotype_properties, *output_driver_genotype_properties;
 FILE *output_methylation_arrays, *output_deme_methylation;
+FILE *final_state_genotype_methylation, *final_state_deme_methylation;
 FILE *gp; // gnuplot pipe
 
 int iterations; // number of iterations (attempted cell events)
@@ -195,7 +195,6 @@ void read_parameters(boost::property_tree::ptree pt)
 	write_grid = pt.get <int> ("parameters.non_biological_parameters.write_grid"); // whether to create images of the grid state
 	write_demes_file = pt.get <int> ("parameters.non_biological_parameters.write_demes_file"); // whether to write deme states to file
 	write_clones_file = pt.get <int> ("parameters.non_biological_parameters.write_clones_file"); // whether to write clone states to file
-	write_meth_arrays = pt.get <int> ("parameters.non_biological_parameters.write_meth_arrays"); // whether to write the methylation arrays time series
 	write_phylo = pt.get <int> ("parameters.non_biological_parameters.write_phylo"); // whether to write phylogeny for all genotypes (not just driver genotypes) 
 	calculate_total_diversity = pt.get <int> ("parameters.non_biological_parameters.calculate_total_diversity"); // whether to calculate diversity across all genotypes (not just driver genotypes) 
 	matrix_max = pt.get <int> ("parameters.non_biological_parameters.matrix_max"); // maximum number of matrix columns (for assigning memory)
@@ -732,6 +731,10 @@ void run_sim(char *input_and_output_path, char *config_file_with_path)
 			num_extinct_driver_genotypes, num_empty_demes, t1, 1, PHYLO_AND_POPS + DIVERSITIES + GENOPROPS);
 		grids_output(preamble_text, preamble_drivers_text, preamble_flips_text, gens_elapsed, num_clones, num_demes, input_and_output_path, buffer_text_short, buffer_text_long, TRUE);
 	}
+
+	// write final state methylation and deme methylation:
+	write_methylation_arrays(output_methylation_arrays, num_matrix_cols);
+	write_deme_methylation(output_deme_methylation, num_demes);
 
 	final_output(trial_num, num_cells, t1);
 	close_files();
@@ -1727,7 +1730,8 @@ void assign_memory()
 	mallocArray_int(&clones_list_in_deme, max_demes, max_clones_per_deme);
 	mallocArray_float(&depth_diversity, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
 	mallocArray_float(&depth_diversity_bigsample, 3, 12); // first dimension: 1, 2 or 3 samples; second dimension: depths 0-10 and random sampling
-	mallocArray_int(&methylation_arrays, max_genotypes, fCpG_sites_per_cell * 2); // 1 fCpG for each DNA strand, max_clones for upper bound on number of arrays
+	mallocArray_int(&methylation_arrays, max_genotypes, fcpgs); // 1 fCpG for each DNA strand, max_clones for upper bound on number of arrays
+	mallocArray_float(&deme_methylation, max_demes, fCpG_sites_per_cell); // averaging both strands, max_demes for upper bound on number of demes
 	if(record_matrix) mallocArray_int(&matrix, matrix_max, matrix_max);
 	else mallocArray_int(&matrix, 1, 1); // if matrix isn't needed then allocate it minimal memory
 	if(use_clone_bintrees) {
@@ -1900,12 +1904,17 @@ void open_files(char *input_and_output_path)
 	sprintf(filebuff, "%soutput_deme_methylation.dat", input_and_output_path);
 	output_deme_methylation=fopen(filebuff, "w+");
 
+	sprintf(filebuff, "%sfinal_state_genotype_methylation.dat", input_and_output_path);
+	final_state_genotype_methylation=fopen(filebuff, "w+");
+	sprintf(filebuff, "%sfinal_state_deme_methylation.dat", input_and_output_path);
+	final_state_deme_methylation=fopen(filebuff, "w+");
+
 	// check that files were successfully opened:
 	if (output_parameters == NULL || output_pops == NULL || output_diversities == NULL || output_demes == NULL || output_clones == NULL || output_genotype_counts == NULL || output_driver_genotype_counts == NULL || 
 		output_phylo == NULL || output_driver_phylo == NULL || output_matrix == NULL || output_driver_matrix == NULL || output_popgrid == NULL || output_flipsgrid == NULL || output_normalcellsgrid == NULL || 
 		output_deathrates_grid == NULL || output_birthratesgrid == NULL || output_migrationratesgrid == NULL || output_driversgrid == NULL || error_log == NULL || sample_size_log == NULL || 
 		output_allele_counts == NULL || output_driver_allele_counts == NULL || output_genotype_properties == NULL || output_driver_genotype_properties == NULL ||
-		output_deme_methylation == NULL || output_methylation_arrays == NULL) {
+		output_deme_methylation == NULL || output_methylation_arrays == NULL || final_state_genotype_methylation == NULL || final_state_deme_methylation == NULL) {
 		perror("Failed to open output file");
 		if(error_log != NULL) fprintf(error_log, "Failed to open output file\n");
 		exit(1);
@@ -1955,7 +1964,7 @@ void initiate_files(int *num_samples_list)
 	fprintf(output_diversities, "\n");
 	
 	// write column names to other output files:
-	fprintf(output_demes, "Generation\tX\tY\tPopulation\tNormalCells\tDeathRate\tDiversity\tDriverDiversity\n");
+	fprintf(output_demes, "Generation\tX\tY\tPopulation\tNormalCells\tDeathRate\tDiversity\tDriverDiversity\tAvgMethArray\n");
 	fprintf(output_clones, "Generation\tClone\tDeme\tGenotype\tDriverGenotype\tParent\tDriverParent\tX\tY\tNormalCells\tPopulation\tBirthRate\t");
 	fprintf(output_clones, "MigrationRate\tDeathRate\tMigrationModifier\tDriverMutations\tMigrationMutations\tMethylations\tDemethylations\tMethylationArray\n");
 	fprintf(output_phylo, "NumCells\tNumSamples\tCellsPerSample\tSampleDepth\tGeneration\tIdentity\tParent\tPopulation\tBirthRate\tMigrationRate\tOriginTime\tDriverMutations\tMigrationMutations\tMethylations\tDemethylations\n");
@@ -1969,7 +1978,7 @@ void initiate_files(int *num_samples_list)
 	fprintf(output_driver_genotype_properties, "Population\tParent\tIdentity\tDriverIdentity\tDriverMutations\tMigrationMutations\tImmortal\tMethylations\tDemethylations\tBirthRate\tMigrationRate\tOriginTime\tDescendants\n");
 
 	fprintf(output_methylation_arrays, "Identity\tPopulation\tNumMeth\tNumDemeth\tArray\n");
-	fprintf(output_deme_methylation, "X\tY\tAverageArray\n");
+	fprintf(output_deme_methylation, "Deme\tPopulation\tX\tY\tAverageArray\n");
 }
 
 // calculate metrics and write to files:
@@ -2279,8 +2288,13 @@ void write_other_files(FILE *output_demes, FILE *output_clones, FILE *output_gen
 	int geno_num, deme_num, driver_geno_num;
 
 	// write deme sizes, locations, and diversities to file:
-	if(write_demes_file) for(i=0; i<num_demes; i++) fprintf(output_demes, "%f\t%d\t%d\t%d\t%d\t%f\t%f\t%f\n", gens_elapsed, deme_ints[XCOORD][i], deme_ints[YCOORD][i],
+	if(write_demes_file) for(i=0; i<num_demes; i++) {
+		calculate_average_deme_methylation(i);
+		fprintf(output_demes, "%f\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t", gens_elapsed, deme_ints[XCOORD][i], deme_ints[YCOORD][i],
 		deme_ints[POPULATION][i], deme_ints[NORMAL_CELLS][i], deme_floats[DEATH_RATE][i], within_deme_diversity[i], within_deme_driver_diversity[i]);
+		for(int j = 0; j < fCpG_sites_per_cell; j++) fprintf(output_demes, "%.2f ", deme_methylation[i][j]);
+		fprintf(output_demes, "\n");
+	}
 
 	// write clone properties to file:
 	if(write_clones_file) for(i=0; i<num_clones; i++) {
@@ -2296,21 +2310,27 @@ void write_other_files(FILE *output_demes, FILE *output_clones, FILE *output_gen
 		fprintf(output_clones, "\n");
 	}
 
-	if(write_meth_arrays) {
-		write_output_methylation(output_methylation_arrays, num_matrix_cols, allele_count);
-	}
-
 	// write phylogenetic data of genotypes to file:
 	if(write_phylo > 0) write_output_phylo(output_phylo, num_matrix_cols, gens_elapsed, genotype_ints[POPULATION], genotype_ints, genotype_floats, 1, -1, -1, num_cells);
 }
 
-//write methylation arrays and deme averages to file:
-void write_output_methylation(FILE* output, int num_cols, int *allele_count) {
+//write all methylation arrays which occur in the tumour to file:
+void write_methylation_arrays(FILE* output, int num_cols) {
 	int i, j;
 
-	for(i = 0; i < num_cols; i++) if(allele_count[i] > 0){
+	for(i = 0; i < num_cols; i++) if(genotype_ints[POPULATION][i] > 0){
 		fprintf(output, "%d\t%d\t%d\t%d\t", genotype_ints[IDENTITY][i], genotype_ints[POPULATION][i], genotype_ints[NUM_METH][i], genotype_ints[NUM_DEMETH][i]);
 		for(j = 0; j < fcpgs; j++) fprintf(output, "%d", methylation_arrays[i][j]);
+		fprintf(output, "\n");
+	}
+}
+
+// write average deme methylation arrays to file:
+void write_deme_methylation(FILE* output, int num_demes) {
+	for(int i = 0; i < num_demes; i++) if(deme_ints[POPULATION][i] > 0) {
+		fprintf(output, "%d\t%d\t%d\t%d\t", i, deme_ints[POPULATION][i], deme_ints[XCOORD][i], deme_ints[YCOORD][i]);
+		calculate_average_deme_methylation(i);
+		for(int j = 0; j < fCpG_sites_per_cell; j++) fprintf(output, "%.2f ", deme_methylation[i][j]);
 		fprintf(output, "\n");
 	}
 }
@@ -3758,6 +3778,30 @@ float calculate_within_deme_diversity(int deme_index, int num_matrix_cols, int n
 
 	if(rao) return 1.0 / (1.0 - diversity / dmax);
 	else return 1.0 / diversity;
+}
+
+// calculate the average methylation array for selected deme:
+void calculate_average_deme_methylation(int deme_index) {
+	int i, j;
+	float tmp_array[fCpG_sites_per_cell];
+	for(j = 0; j < fCpG_sites_per_cell; j++) tmp_array[j] = 0.0; // initialise array to zero
+	int deme_pop = deme_ints[POPULATION][deme_index];
+	int clone_num, clone_pop, clone_geno;
+	for(i = 0; i < deme_ints[NUM_CLONES_IN_DEME][deme_index]; i++) {
+		clone_num = clones_list_in_deme[deme_index][i];
+		clone_pop = clone_ints[POPULATION][clone_num];
+		clone_geno = clone_ints[GENOTYPE][clone_num];
+		for(j = 0; j < fCpG_sites_per_cell; j++) {
+			float site =((float)methylation_arrays[clone_geno][j]+(float)methylation_arrays[clone_geno][j+fCpG_sites_per_cell])/2.0;
+			tmp_array[j] += clone_pop * site;
+		}
+	}
+	for(j = 0; j < fCpG_sites_per_cell; j++) {
+		tmp_array[j] /= (float) deme_pop;
+		deme_methylation[deme_index][j] = tmp_array[j];
+		//printf("%.2f ", deme_methylation[deme_index][j]);
+	}
+	//printf("\n");
 }
 
 void find_sample_genotype_pops(int *genotype_populations_in_sample, int *sampled_cells, int num_matrix_cols, int num_cells, int **either_matrix, int dmax, int num_demes, int num_clones, 

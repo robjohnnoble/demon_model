@@ -94,8 +94,9 @@
 //
 #define DEATH_RATE 0 // death rate of the deme
 #define MIGRATION_MODIFIER 1 // factor by which migration rate is multiplied (depends on what cells are in the deme)
+#define AVG_ARRAY 2 // average methylation array of the deme
 
-#define NUM_DEME_FLOAT_PROPS 2
+#define NUM_DEME_FLOAT_PROPS 3
 //
 #define SUM_BIRTH_RATES 0 // sum of birth rates of cancer cells in the deme
 #define SUM_MIGRATION_RATES 1 // sum of migration rates of cancer cells in the deme
@@ -222,7 +223,8 @@ void plot_pops_grid(FILE *gp, char *preamble_text, float gens_elapsed, char *inp
 void plot_flips_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, int num_demes, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 void plot_migration_grid(FILE *gp, char *preamble_text, float gens_elapsed, int num_clones, char *input_and_output_path, char *buffer_text_short, char *buffer_text_long);
 
-void write_output_methylation(FILE* output, int num_cols, int *allele_count);
+void write_methylation_arrays(FILE* output, int num_cols);
+void write_deme_methylation(FILE* output, int num_demes);
 
 // set rates:
 float set_birth_rate(int new_birth_mutations, float parent_birth_rate, long *idum);
@@ -286,6 +288,7 @@ float centre_of_gravity(int direction, int num_cells);
 float calculate_diversity(int num_matrix_cols, int N, int *populations, int **either_matrix, int dmax, int rao);
 float calculate_edge_diversity(int num_matrix_cols, int num_cells, int **either_matrix, int dmax, int num_demes, int num_clones, int *clone_genotype, long *idum, int rao, int* position_in_edge_list, 
 	int* demes_at_edge, int* sides_at_edge, int* genotype_edge_pop);
+void calculate_average_deme_methylation(int deme_index);
 float calculate_within_deme_diversity(int deme_index, int num_matrix_cols, int num_clones, int *clone_genotype, int **either_matrix, int dmax, int rao, int is_drivers_only, int* genotype_edge_pop);
 void find_sample_genotype_pops(int *genotype_populations_in_sample, int *sampled_cells, int num_matrix_cols, int num_cells, int **either_matrix, int dmax, int num_demes, int num_clones, 
 	int depth, float centre_X, float centre_Y, int *clone_genotype, int num_directions, int biopsy_size_per_sample, long *idum, FILE *sample_size_log, float gens_elapsed, int rao, int *at_edge);
