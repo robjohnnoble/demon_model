@@ -1,4 +1,4 @@
-#include "demon.h"
+#include "methdemon.h"
 
 // two-dim arrays:
 int **clone_ints;
