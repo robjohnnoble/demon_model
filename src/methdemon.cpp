@@ -179,7 +179,7 @@ void read_parameters(boost::property_tree::ptree pt)
 	// methylation parameters:
 	meth_rate = pt.get <float> ("parameters.methylation_parameters.meth_rate"); // rate of fCpG site methylation
 	demeth_rate = pt.get <float> ("parameters.methylation_parameters.demeth_rate"); // rate of fCpG site demethylation
-	fCpG_sites_per_cell = pt.get <float> ("parameters.methylation_parameters.fCpG_sites_per_cell"); // number of fCpG sites per cell
+	fCpG_sites_per_cell = pt.get <int> ("parameters.methylation_parameters.fCpG_sites_per_cell"); // number of fCpG sites per cell
 	manual_array = pt.get <float> ("parameters.methylation_parameters.manual_array"); // percentage of demethylated sites in initial array
 
 	// seed:
