@@ -27,8 +27,8 @@ parameters
     }
     methylation_parameters
     {
-    	meth_rate 0.1
-	    demeth_rate 0.1
+    	meth_rate 0.05
+	    demeth_rate 0.05
 	    fCpG_sites_per_cell 100
 	    manual_array -1
     }
@@ -36,7 +36,7 @@ parameters
     {
         init_pop 1
         matrix_max -1
-        max_pop 100000
+        max_pop 1000000
         max_time 86400
         max_generations 2000
         seed 10
