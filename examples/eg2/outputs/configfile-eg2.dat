@@ -28,9 +28,9 @@ parameters
     methylation_parameters
     {
     	meth_rate 0.05
-	    demeth_rate 0.05
-	    fCpG_sites_per_cell 100
-	    manual_array -1
+	demeth_rate 0.05
+	fCpG_sites_per_cell 100
+	manual_array -1
     }
     non_biological_parameters
     {
