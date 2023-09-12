@@ -9,17 +9,17 @@ The program is written in C++ (mostly plain C); it requires gnuplot and the Boos
 
 Copy the following three files into a new folder:
 
-* `src/demon.cpp` (model code);
-* `src/demon.h` (header file);
+* `src/methdemon.cpp` (model code);
+* `src/methdemon.h` (header file);
 * `resources/configfile-example.dat` (configuration file);
 
 In a terminal window, navigate to your folder and type the following commands:
 ```
 # 1) Compilation
-g++ -o demon demon.cpp -I/usr/local/include/boost/ -lm
+g++ -o methdemon methdemon.cpp -I/usr/local/include/boost/ -lm
 
 # 2) Execution
-./demon  ./ configfile-example.dat
+./methdemon  ./ configfile-example.dat
 ```
 
 ## Configuration file
