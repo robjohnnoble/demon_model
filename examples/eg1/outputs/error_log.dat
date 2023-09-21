@@ -1,0 +1,5 @@
+num_matrix_cols is 95999; allocated array size is 96000; Iterations 170465, num_cells 13756
+Ran 1 trials (max permitted 200 trials)
+Reached 170465 iterations and 13756 cells
+Completed in 4 seconds.
+Exit code 1

@@ -7,8 +7,8 @@
 #include <iostream>
 #include <string>
 #include <cfloat>
-#include <boost/property_tree/info_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include "boost/property_tree/info_parser.hpp"
+#include "boost/property_tree/ptree.hpp"
 
 ///// mathematical constants:
 #define INVROOT2 0.70710678118
@@ -154,10 +154,10 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idum);
 
 // genotype and driver genotype events (lower level):
-void choose_number_mutations(int *new_meth, int *new_demeth, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum);
+void choose_number_mutations(int *new_meth, int *new_demeth, int meth_sites, int demeth_sites, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum);
 int select_genotype_index(int *num_empty_cols, int *num_matrix_cols, int *empty_cols);
 void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int *num_matrix_cols, int daughter_geno_num, int parent_geno_num, int *next_genotype_id, int daughter_driver_id, 
-	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int new_birth_mutations, int new_mig_mutations, float gens_elapsed, long *idum);
+	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int meth_sites, int demeth_sites, int new_birth_mutations, int new_mig_mutations, float gens_elapsed, long *idum);
 void increment_or_decrement_genotype(int **geno_or_driver_ints, int parent_geno_num, int *empty_cols, int *num_empty_cols, int change, int *num_extinct_genotypes);
 void create_column(int **either_matrix, int num_matrix_cols, int parent_geno_num, int daughter_geno_num, int num_mutations);
 
@@ -311,6 +311,7 @@ char *zeroes(int, int, char *buffer_text_short, char *buffer_text_long);
 char *concat(char *, char *, char *buffer_text_long);
 double ran1(long *);
 int which_quadrant(int x, int y, float theta, float tan_theta, int l);
+void swap(int* a, int* b);
 float expdev(long *);
 unsigned int hypergeometric(long *, unsigned int, unsigned int, unsigned int);
 unsigned int poisson(long *idum, double mu);

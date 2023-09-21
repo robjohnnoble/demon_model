@@ -8,7 +8,7 @@ parameters
     {
         migration_type 2
         init_migration_rate -1
-        migration_edge_only 1
+        migration_edge_only 0
         migration_rate_scales_with_K 0
     }
     mutation_rates
@@ -18,7 +18,7 @@ parameters
     }
     fitness_effects
     {
-        normal_birth_rate 0.9
+        normal_birth_rate 0
         baseline_death_rate 0
         s_driver_birth 0
         s_driver_migration 0
@@ -27,10 +27,10 @@ parameters
     }
     methylation_parameters
     {
-    	meth_rate 0.05
-	demeth_rate 0.05
-	fCpG_sites_per_cell 100
-	manual_array -1
+    	meth_rate 0.0011
+	    demeth_rate 0.0013
+	    fCpG_sites_per_cell 1000
+	    manual_array -1
     }
     non_biological_parameters
     {

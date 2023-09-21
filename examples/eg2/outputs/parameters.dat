@@ -1,0 +1,2 @@
+K	migration_type	init_migration_rate	migration_edge_only	migration_rate_scales_with_K	mu_driver_birth	meth_rate	demeth_rate	mu_driver_migration	normal_birth_rate	baseline_death_rate	s_driver_birth	s_driver_migration	max_relative_birth_rate	max_relative_migration_rate	init_pop	seed	biopsy_size_per_sample
+131072	2	0.000000e+00	0	0	1.000000e-05	5.000000e-02	5.000000e-02	0.900000	0.000000	0.000000	0.000000	10.000000	10.000000	0.000000	11069	100	0

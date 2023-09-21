@@ -34,6 +34,7 @@ int *min_deme_bintree_index_by_layer, *min_clone_bintree_index_by_layer;
 float *buff_small_float;
 double *buff_small_double;
 int *buff_array_int;
+int *meth_indices, *demeth_indices;
 
 // parameters read from config file:
 int log2_deme_carrying_capacity; // log2 of deme carrying capacity
@@ -425,6 +426,7 @@ void initialise(int *num_cells, int *num_clones, int *num_demes, int *num_matrix
 	if(manual_array == -1) {
 		for(int i = 0; i < fcpgs; i++) {
 			methylation_arrays[0][i] = ran1(idum) >= 0.5? 1:0;
+
 		}
 	}
 	else {
@@ -922,6 +924,7 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 	int daughter_geno_num, daughter_driver_geno_num;
 	float new_birth_rate, new_migration_rate;
 	int daughter_driver_id;
+	int meth_sites = 0, demeth_sites;
 
 	// record the daughter's clone number (for use in subsequent functions);
 	// unless changed by mutations, both daughter cells will belong to the parent's clone:
@@ -939,7 +942,12 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 	increment_or_decrement_deme(1, parent_deme_num, *num_cells, num_demes, num_empty_demes);
 
 	// choose numbers of mutations of each type:
-	choose_number_mutations(new_meth, new_demeth, new_mig_mutations, new_birth_mutations, new_mutations, idum);
+	for(int i = 0; i < fcpgs; i++) {
+		meth_sites += methylation_arrays[parent_geno_num][i];
+	}
+	demeth_sites = fcpgs - meth_sites;
+
+	choose_number_mutations(new_meth, new_demeth, meth_sites, demeth_sites, new_mig_mutations, new_birth_mutations, new_mutations, idum);
 
 	// if no new mutations then simply increment parent clone, genotype, and driver genotype populations:
 	if(!(new_mutations[0]) && !(new_mutations[1])) {
@@ -972,7 +980,7 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 				daughter_driver_geno_num = select_genotype_index(num_empty_driver_cols, num_driver_matrix_cols, empty_driver_cols);
 				daughter_driver_id = *next_driver_genotype_id;
 				create_genotype(driver_genotype_ints, driver_genotype_floats, num_driver_matrix_cols, daughter_driver_geno_num, parent_driver_geno_num, 
-					next_driver_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed, idum);
+					next_driver_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, new_meth[index], new_demeth[index], meth_sites, demeth_sites, new_birth_mutations[index], new_mig_mutations[index], gens_elapsed, idum);
 				if(matrix_max > 0) create_column(driver_matrix, *num_driver_matrix_cols, parent_driver_geno_num, daughter_driver_geno_num, new_birth_mutations[index] + new_mig_mutations[index]);
 			}
 			else {
@@ -986,7 +994,7 @@ void cell_division(int *event_counter, int *num_cells, int parent_deme_num, int 
 			if(record_matrix) create_column(matrix, *num_matrix_cols, parent_geno_num, daughter_geno_num, new_mutations[index]);
 			// create a new genotype containing only the daughter cell:
 			create_genotype(genotype_ints, genotype_floats, num_matrix_cols, daughter_geno_num, parent_geno_num, next_genotype_id, daughter_driver_id, new_birth_rate, new_migration_rate, 
-				new_meth[index], new_demeth[index], new_birth_mutations[index], new_mig_mutations[index], gens_elapsed, idum);
+				new_meth[index], new_demeth[index], meth_sites, demeth_sites, new_birth_mutations[index], new_mig_mutations[index], gens_elapsed, idum);
 
 
 			// create a clone containing only the daughter cell:
@@ -1158,57 +1166,58 @@ void deme_fission(int *event_counter, int origin_deme_num, long *idum, int *num_
 	event_counter[FISSION_EVENT]++;
 }
 
-void de_methylate(int new_meth, int new_demeth, int daughter_genotype, long *idum) {
+void de_methylate(int new_meth, int new_demeth, int meth_sites, int demeth_sites, int daughter_genotype, long *idum) {
 	int *daughter_array = &methylation_arrays[daughter_genotype][0];
-	int no0 = 0, no1 = 0;
-
+	int meth_tmp = 0, demeth_tmp = 0;
+	
+	// get indices of currently methylated and demethylated sites:
 	for(int i = 0; i < fcpgs; i++) {
-		daughter_array[i] == 0 ? no0++ : no1++;
+		if(daughter_array[i] == 1) {
+			meth_indices[meth_tmp] = i;
+			meth_tmp++;
+		}
+		else {
+			demeth_indices[demeth_tmp] = i;
+			demeth_tmp++;
+		}
 	}
 
-	if(new_meth) {
-		// randomly choose fCpG site with value 0 to methylate and update the daughter's array:
-		int site = (int) floor(ran1(idum) * no0);
-		int count = 0;
-		for(int i = 0; i < fcpgs; i++) {
-			if(daughter_array[i] == 0) {
-				if(count == site) {
-					daughter_array[i] = 1;
-					//printf("Methylated site %d\n", i+1);
-					break;
-				}
-				count++;
-			}
-		}
+	// perform Fisher-Yates shuffle for methylations:
+	for(int i = demeth_sites - 1; i >= demeth_sites - new_meth; i--) {
+		int j = (int)(ran1(idum) * (i + 1));
+		int tmp = demeth_indices[j];
+		demeth_indices[j] = demeth_indices[i];
+		demeth_indices[i] = tmp;
 	}
-	if(new_demeth) {
-		// randomly choose fCpG site with value 1 to demethylate and update the daughter's array:
-		int site = (int) floor(ran1(idum) * no1);
-		int count = 0;
-		for(int i = 0; i < fcpgs; i++) {
-			if(daughter_array[i] == 1) {
-				if(count == site) {
-					daughter_array[i] = 0;
-					//printf("Demethylated site %d\n", i+1);
-					break;
-				}
-				count++;
-			}
-		}
+
+	// perform Fisher-Yates shuffle for demethylations:
+	for(int i = meth_sites - 1; i >= meth_sites - new_demeth; i--) {
+		int j = (int)(ran1(idum) * (i + 1));
+		int tmp = meth_indices[j];
+		meth_indices[j] = meth_indices[i];
+		meth_indices[i] = tmp;
+	}
+
+	//perform methylations and demethylations:
+	for(int i = 0; i < new_meth; i++) {
+		daughter_array[meth_indices[demeth_sites - 1 - i]] = 1;
+	}
+	for(int i =0 ; i < new_demeth; i++) {
+		daughter_array[demeth_indices[meth_sites - 1 - i]] = 0;
 	}
 }
 
 ///// genotype or driver genotype:
 
 // choose numbers of mutations of each type (methylation, demethylation, birth rate, migration rate):
-void choose_number_mutations(int *new_meth, int *new_demeth, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum)
+void choose_number_mutations(int *new_meth, int *new_demeth, int meth_sites, int demeth_sites, int *new_mig_mutations, int *new_birth_mutations, int *new_mutations, long *idum)
 {
 	int i;
 
 	for(i=0; i<2; i++) { // loop over both daughter cells
 		new_birth_mutations[i] = poisson(idum, mu_driver_birth); // driver mutations
-		new_meth[i] = poisson(idum, meth_rate); // methylation events
-		new_demeth[i] = poisson(idum, demeth_rate); // demethylation events
+		new_meth[i] = poisson(idum, demeth_sites*meth_rate); // methylation events
+		new_demeth[i] = poisson(idum, meth_sites*demeth_rate); // demethylation events
 		new_mig_mutations[i] = poisson(idum, mu_driver_migration); // migration rate mutations
 		new_mutations[i] = new_birth_mutations[i] + new_meth[i] + new_demeth[i] + new_mig_mutations[i];
 	}
@@ -1233,7 +1242,7 @@ int select_genotype_index(int *num_empty_cols, int *num_matrix_cols, int *empty_
 
 // create a new genotype or driver genotype:
 void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, int *num_matrix_cols, int daughter_geno_num, int parent_geno_num, int *next_genotype_id, int daughter_driver_id, 
-	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int new_birth_mutations, int new_mig_mutations, float gens_elapsed, long *idum)
+	float new_birth_rate, float new_migration_rate, int new_meth, int new_demeth, int meth_sites, int demeth_sites, int new_birth_mutations, int new_mig_mutations, float gens_elapsed, long *idum)
 {
 	// create new genotype:
 	geno_or_driver_ints[POPULATION][daughter_geno_num] = 1; // initialise population
@@ -1270,7 +1279,7 @@ void create_genotype(int **geno_or_driver_ints, float **geno_or_driver_floats, i
 	}
 
 	// perform (de)methylation events:
-	de_methylate(new_meth, new_demeth, daughter_geno_num, idum);
+	de_methylate(new_meth, new_demeth, meth_sites, demeth_sites, daughter_geno_num, idum);
 }
 
 // increment or decrement a genotype or driver genotype:
@@ -1659,7 +1668,7 @@ void remove_deme(int deme_index, int *num_cells, int *num_clones, int *num_demes
 	// update deme and bintree rates:
 	update_bintree_layers(-deme_doubles[SUM_RATES][deme_index], bintree_deme_doubles, deme_index, max_layer_needed, max_demes);
 
-	// replace the deme in each demes array and update the deme number of the clones, unless the deme is at the end of the array:
+	// replace the deme in each demes array and update the de number of the clones, unless the deme is at the end of the array:
 	if(deme_index < *num_demes - 1) {
 		for(i=0; i<deme_ints[NUM_CLONES_IN_DEME][*num_demes - 1]; i++) {
 			clones_list_in_deme[deme_index][i] = clones_list_in_deme[*num_demes - 1][i];
@@ -1784,6 +1793,9 @@ void assign_memory()
 	if(buff_small_float == NULL) {printf("Memory problem: buff_small_float\n"); exit(1);}
 	buff_array_int = (int *) malloc(MAX(MAX(SET_SIZE, 3), max_genotypes) * sizeof *buff_array_int);
 	if(buff_array_int == NULL) {printf("Memory problem: buff_array_int\n"); exit(1);}
+
+	meth_indices = (int *) malloc(fcpgs * sizeof *meth_indices);
+	demeth_indices = (int *) malloc(fcpgs * sizeof *demeth_indices);
 
 	printf("Assigned memory\n");
 }
@@ -4227,6 +4239,13 @@ int which_quadrant(int x, int y, float theta, float tan_theta, int l)
 		if(tan_theta > (float)(x - l) / y) return 4;
 		else return 3;
 	}
+}
+
+// swap two integers:
+void swap(int* a, int* b) {
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
 
 // return an exponentially distributed, positive, random deviate of unit mean:
