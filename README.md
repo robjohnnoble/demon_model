@@ -48,8 +48,8 @@ Fitness effects
 * `float max_relative_migration_rate`: maximum dispersal rate, relative to initial dispersal rate
 
 Fluctuating methylation arrays
-* `float meth_rate`: rate of fCpG site methylation
-* `float demeth_rate`: rate of fCpG site demethylation
+* `float meth_rate`: methylation probability per allele per cell division
+* `float demeth_rate`: demethylation probability per allele per cell division
 * `int fCpG_sites_per_cell`: number of fluctuating loci per cell
 * `float manual_array`: proportion of loci in a homogeneous unmethylated state in the initial array (-1 for all random values)
 
