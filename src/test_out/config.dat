@@ -2,35 +2,33 @@ parameters
 {
     spatial_structure
     {
-        log2_deme_carrying_capacity 7
+        log2_deme_carrying_capacity 14
     }
     dispersal
     {
-        migration_type 2
-        init_migration_rate 2e-03
-        migration_edge_only 0
+        init_migration_rate 0.0001
         migration_rate_scales_with_K 1
     }
     mutation_rates
     {
-        mu_driver_birth 1e-05
-        mu_driver_migration 0.01
+        mu_driver_birth 0
+        mu_driver_migration 0
     }
     fitness_effects
     {
-        normal_birth_rate 0.9
+        normal_birth_rate 0
         baseline_death_rate 0
-        s_driver_birth 0.1
+        s_driver_birth 0
         s_driver_migration 0
         max_relative_birth_rate 10
         max_relative_migration_rate 10
     }
     methylation_parameters
     {
-    	meth_rate 0.0001
-	demeth_rate 0.0001
-	fCpG_sites_per_cell 2000
-	manual_array -1
+    	meth_rate 0.001
+	    demeth_rate 0.001
+	    fCpG_sites_per_cell 1000
+        manual_array -1
     }
     non_biological_parameters
     {
@@ -39,10 +37,17 @@ parameters
         max_pop 1000000
         max_time 86400
         max_generations 2000
+        t0 50
+        t1 100
+        t2 120
+        t3 130
+        t4 140
+        t5 150
+        t6 160
         seed 10
         write_grid 0
-        write_clones_file 0
-        write_demes_file 0
+        write_clones_file 1
+        write_demes_file 1
         record_matrix 0
         write_phylo 0
         calculate_total_diversity 0
