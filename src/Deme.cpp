@@ -1,13 +1,13 @@
 #include "Objects.hpp"
 
 // Constructor
-Deme::Deme(int K, const std::string side, int identity, int population, int numberOfClones, int fissions,
+Deme::Deme(int K, std::string side, int identity, int population, int fissions,
     float deathRate, float migrationModifier, float sumBirthRates, float sumMigrationRates)
-    : K(K), side(side), identity(identity), population(population), number_of_clones(numberOfClones),
-        fissions(fissions), death_rate(deathRate), migration_modifier(migrationModifier),
+    : K(K), side(side), identity(identity), population(population), fissions(fissions),
+        death_rate(deathRate), migration_modifier(migrationModifier),
         sum_birth_rates(sumBirthRates), sum_migration_rates(sumMigrationRates) {}
 
-void Deme::initial_sum() {
+void Deme::calculate_sum_of_rates() {
     sum_rates = sum_birth_rates + sum_migration_rates + death_rate;
 }
 
@@ -17,7 +17,7 @@ void Deme::calculate_average_array(const DerivedParameters& d_params, std::vecto
 
     for (int i = 0; i < clones_list.size(); i++) {
         for (int j = 0; i < d_params.fcpgs; j++) {
-            res[j] += clones[clones_list[i]].meth_array[j] * clones[clones_list[i]].population;
+            res[j] += clones_list[i]->meth_array[j] * clones_list[i]->population;
         }
     }
 
@@ -26,6 +26,7 @@ void Deme::calculate_average_array(const DerivedParameters& d_params, std::vecto
     }
 }
 
+// rates handling
 void Deme::set_death_rate(const InputParameters& params) {
     if (population <= K) {
         death_rate = params.baseline_death_rate;
@@ -39,3 +40,4 @@ void Deme::increment(int increment, const InputParameters& params) {
     population += increment;
     set_death_rate(params);
 }
+

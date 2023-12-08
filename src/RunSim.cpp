@@ -40,9 +40,6 @@ void run_sim(const std::string& input_and_output_path,
         else if (event_type == "fission") {
             tumour.deme_fission(chosen_clone, event_counter, rng, chosen_deme);
         }
-        else {
-            std::cout << "Error: event type not recognised" << std::endl;
-        }
     }
 
     tumour.final_output();
