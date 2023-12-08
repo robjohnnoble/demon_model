@@ -160,7 +160,6 @@ void Tumour::remove_driver_genotype(DriverGenotype& driver_genotype) {
     // update indices
     for (int i = 0; i < driver_genotypes.size(); i++) {
         driver_genotypes[i].index = i;
-        clones[i].driver_index = i;
     }
 }
 
