@@ -8,7 +8,7 @@ void Tumour::initialise(const InputParameters& params,
     driver_genotypes.push_back(driver_genotype);
 
     // clones:
-    Clone clone(1, 0, 0, 0, 0);
+    Clone clone(1, 0, 0, 0, 0, 0);
     clone.initial_array(params, d_params, rng);
     clones.push_back(clone);
 
@@ -51,8 +51,6 @@ int Tumour::choose_deme(RandomNumberGenerator& rng) {
 }
 // choose clone
 int Tumour::choose_clone(int chosen_deme, RandomNumberGenerator& rng) {
-    // cumulative sum of birth and death rates to choose a clone
-    // first need to choose a genotype then a clone which has that driver genotype
     std::vector<double> cum_rates;
     double r;
 
@@ -62,7 +60,7 @@ int Tumour::choose_clone(int chosen_deme, RandomNumberGenerator& rng) {
         int driver_id = demes[chosen_deme].clones_list[0]->driver_index;
         cum_rates[0] = demes[chosen_deme].death_rate + driver_genotypes[driver_id].birth_rate;
         for (int i = 1; i < demes[chosen_deme].clones_list.size(); i++) {
-            cum_rates[i] = cum_rates + demes[chosen_deme].death_rate + driver_genotypes[driver_id].birth_rate;
+            cum_rates[i] = cum_rates[i-1] + demes[chosen_deme].death_rate + driver_genotypes[driver_id].birth_rate;
         }
         r = rng.unif_ran() * cum_rates.back();
     }
@@ -73,24 +71,47 @@ int Tumour::choose_clone(int chosen_deme, RandomNumberGenerator& rng) {
         return std::lower_bound(cum_rates.begin(), cum_rates.end(), r) - cum_rates.begin();
     }
 }
+// choose event type
+std::string Tumour::choose_event_type(int chosen_deme, int chosen_clone, RandomNumberGenerator& rng) {
+    std::vector<float> cum_rates;
+    int ctr = 0;
+    float res;
+
+    cum_rates[ctr] = get_clone_birth(*demes[chosen_deme].clones_list[chosen_clone]);
+    ctr++;
+
+    cum_rates[ctr] = demes[chosen_deme].death_rate;
+    ctr++;
+
+    res = rng.unif_ran() * cum_rates.back();
+    if(res < cum_rates[0]) {
+        return "birth";
+    }
+    else if(res < cum_rates[1]) {
+        return "death";
+    }
+    else {
+        return "fission";
+    }
+}
 
 // deme fission
-void Tumour::deme_fission(Deme& deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params){
+void Tumour::deme_fission(int chosen_deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params){
     if (next_fission == fission_times[0]) {
         // first fission - sets up left and right sides of the tumour
         event_counter.fission++;
-        Deme new_deme(deme.K, std::string("right"), static_cast<int>(demes.size()), 0, deme.fissions + 1, 0, 0, 0, 0);
-        move_cells(deme, new_deme, rng, params);
+        Deme new_deme(demes[chosen_deme].K, std::string("right"), static_cast<int>(demes.size()), 0, demes[chosen_deme].fissions + 1, 0, 0, 0, 0);
+        move_cells(demes[chosen_deme], new_deme, rng, params);
     } else if (gens_elapsed >= next_fission) {
         // subsequent fissions
         event_counter.fission++;
-        Deme new_deme(deme.K, deme.side, static_cast<int>(demes.size()), 0, deme.fissions + 1, 0, 0, 0, 0);
-        move_cells(deme, new_deme, rng, params);
+        Deme new_deme(demes[chosen_deme].K, demes[chosen_deme].side, static_cast<int>(demes.size()), 0, demes[chosen_deme].fissions + 1, 0, 0, 0, 0);
+        move_cells(demes[chosen_deme], new_deme, rng, params);
     } else {
         // pseudo fission - kills half the population in a deme without creating a new deme
         event_counter.fission++;
-        deme.fissions++;
-        pseudo_fission(deme, rng, params);
+        demes[chosen_deme].fissions++;
+        pseudo_fission(demes[chosen_deme], rng, params);
     }
 }
 // move cells after deme fission
@@ -166,17 +187,17 @@ void Tumour::remove_driver_genotype(DriverGenotype& driver_genotype) {
 
 // division of cancer cells
 void Tumour::cell_division(EventCounter& event_counter, RandomNumberGenerator& rng,
-    Deme& deme, Clone& clone, DriverGenotype& driver_genotype, const InputParameters& params) {
+    int chosen_deme, int chosen_clone, const InputParameters& params) {
     // update event counter for birth
     event_counter.birth++;
-    deme.increment(1, params);
+    demes[chosen_deme].increment(1, params);
 
     std::vector<int> new_birth_drivers(2,0), new_mig_drivers(2,0);
     std::vector<int> new_mutations = choose_number_mutations(rng, params.mu_driver_birth, params.mu_driver_migration, new_birth_drivers, new_mig_drivers);
     if(!new_mutations[0] && !new_mutations[1]) {
-        driver_genotype.increment(1);
-        create_clone(deme, driver_genotype, params, event_counter, rng);
-        methylation(clone, driver_genotype, params, event_counter, rng);
+        driver_genotypes[clones[chosen_clone].driver_index].increment(1);
+        create_clone(demes[chosen_deme], driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index], params, event_counter, rng);
+        methylation(*demes[chosen_deme].clones_list[chosen_clone], driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index], params, event_counter, rng);
     }
     else {
         // update event counter for mutations
@@ -185,10 +206,10 @@ void Tumour::cell_division(EventCounter& event_counter, RandomNumberGenerator& r
         for (int i = 0; i < 2; i++) {
             if(new_birth_drivers[i] || new_mig_drivers[i]) {
                 // create clone and perform methylation
-                create_clone(deme, driver_genotype, params, event_counter, rng);
+                create_clone(demes[chosen_deme], driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index], params, event_counter, rng);
                 // update driver id
                 clones.back().driver_genotype = next_driver_genotype_id;
-                create_driver_genotype(clone, driver_genotype);
+                create_driver_genotype(clones[demes[chosen_deme].clones_list[chosen_clone]->index], driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index]);
                 // update number of mutations
                 driver_genotypes.back().number_of_driver_mutations = new_birth_drivers[i];
                 driver_genotypes.back().number_of_migration_mutations = new_mig_drivers[i];
@@ -196,30 +217,29 @@ void Tumour::cell_division(EventCounter& event_counter, RandomNumberGenerator& r
                 driver_genotypes.back().set_migration_rate(params, rng);
             }
             else {
-                methylation(clone, driver_genotype, params, event_counter, rng);
+                methylation(*demes[chosen_deme].clones_list[chosen_clone], driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index], params, event_counter, rng);
             }
         }
         
         if (new_mutations[0] && new_mutations[1]) {
-            driver_genotype.increment(-1);
-            if (!driver_genotype.immortal) {
-                remove_driver_genotype(driver_genotype);
+            driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index].increment(-1);
+            if (!driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index].immortal) {
+                remove_driver_genotype(driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index]);
             }
         }
     }
-    calculate_deme_birth_rate(deme);
-    calculate_deme_migration_rate(deme);
+    calculate_deme_birth_rate(demes[chosen_deme]);
+    calculate_deme_migration_rate(demes[chosen_deme]);
 }
 // death of cancer cells
-void Tumour::cell_death(EventCounter& event_counter, Deme& deme, Clone& clone,
-    DriverGenotype& driver_genotype, const InputParameters& params) {
+void Tumour::cell_death(EventCounter& event_counter, int chosen_deme, int chosen_clone, const InputParameters& params) {
     event_counter.death++;
-    deme.increment(-1, params);
-    driver_genotype.increment(-1);
-    if (!driver_genotype.immortal) {
-        remove_driver_genotype(driver_genotype);
+    demes[chosen_deme].increment(-1, params);
+    driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index].increment(-1);
+    if (!driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index].immortal) {
+        remove_driver_genotype(driver_genotypes[demes[chosen_deme].clones_list[chosen_clone]->driver_index]);
     }
-    remove_clone(deme, clone);
+    remove_clone(demes[chosen_deme], *demes[chosen_deme].clones_list[chosen_clone]);
 }
 
 // perform methylation without altering the genotype or clone
@@ -240,7 +260,7 @@ void Tumour::methylation(Clone& clone, DriverGenotype& driver_genotype, const In
 // create new clone upon division and perform methylation - still part of parents' driver genotype
 void Tumour::create_clone(Deme& deme, DriverGenotype& parent, const InputParameters& params, 
     EventCounter& event_counter, RandomNumberGenerator& rng) {
-    Clone clone(1, deme.identity, next_genotype_id++, parent.driver_identity, deme.clones_list.size());
+    Clone clone(1, deme.identity, next_genotype_id++, parent.driver_identity, deme.clones_list.size(), driver_genotypes.size());
     methylation(clone, parent, params, event_counter, rng);
     clones.push_back(clone);
     deme.clones_list.push_back(&clone);
@@ -315,42 +335,18 @@ int Tumour::num_demes() {
 
 // clone rates
 float Tumour::get_clone_birth(Clone& clone) {
-    int driver_id = clone.driver_genotype;
-    auto it = std::find_if(driver_genotypes.begin(), driver_genotypes.end(), 
-                           [driver_id](const DriverGenotype& d) { return d.driver_identity == driver_id; });
-    if (it != driver_genotypes.end()) {
-        it->birth_rate;
-    } else {
-        std::cout << "Error: driver genotype not found" << std::endl;
-        exit(1);
-    }
+    return driver_genotypes[clone.driver_index].birth_rate;
 }
 
 float Tumour::get_clone_migration(Clone& clone) {
-    int driver_id = clone.driver_genotype;
-    auto it = std::find_if(driver_genotypes.begin(), driver_genotypes.end(), 
-                           [driver_id](const DriverGenotype& d) { return d.driver_identity == driver_id; });
-    if (it != driver_genotypes.end()) {
-        it->migration_rate;
-    } else {
-        std::cout << "Error: driver genotype not found" << std::endl;
-        exit(1);
-    }
+    return driver_genotypes[clone.driver_index].migration_rate;
 }
 
 // deme rates
 void Tumour::calculate_deme_birth_rate(Deme& deme) {
     float birth_rate = 0;
     for (int i = 0; i < deme.clones_list.size(); i++) {
-        int driver_id = deme.clones_list[i]->driver_genotype;
-        auto it = std::find_if(driver_genotypes.begin(), driver_genotypes.end(), 
-                               [driver_id](const DriverGenotype& g) { return g.driver_identity == driver_id; });
-        if (it != driver_genotypes.end()) {
-            birth_rate += it->birth_rate;
-        } else {
-            std::cout << "Error: genotype not found" << std::endl;
-            exit(1);
-        }
+        birth_rate += get_clone_birth(*deme.clones_list[i]);
     }
     deme.sum_birth_rates = birth_rate;
 }
@@ -358,15 +354,7 @@ void Tumour::calculate_deme_birth_rate(Deme& deme) {
 void Tumour::calculate_deme_migration_rate(Deme& deme) {
     float migration_rate = 0;
     for (int i = 0; i < deme.clones_list.size(); i++) {
-        int driver_id = deme.clones_list[i]->driver_genotype;
-        auto it = std::find_if(driver_genotypes.begin(), driver_genotypes.end(), 
-                               [driver_id](const DriverGenotype& g) { return g.driver_identity == driver_id; });
-        if (it != deme.clones_list.end()) {
-            migration_rate += it->migration_rate;
-        } else {
-            std::cout << "Error: genotype not found" << std::endl;
-            exit(1);
-        }
+        migration_rate += get_clone_migration(*deme.clones_list[i]);
     }
     deme.sum_migration_rates = migration_rate;
 }

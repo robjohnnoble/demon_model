@@ -8,6 +8,28 @@
 #include <vector>
 #include <algorithm>
 
+class Clone {
+    public:
+    // Properties
+    int population; // Number of cancer cells
+    int deme; // Index of the deme in which the clone is located
+    int genotype; // Identity of the clone
+    int driver_genotype; // Driver genotype of the clone
+    int driver_index; // Index of the driver genotype in the tumour
+    // TO DO: add driver index handling in relevant functions
+
+    int index_in_deme; // Index of the clone within its deme
+    int index; // index in tumour
+
+    std::vector<int> meth_array; // fCpG array of the clone
+
+    // Constructor
+    Clone(int population, int deme, int genotype, int driverGenotype, int indexInDeme, int driver_index);
+
+    // Methods
+    void initial_array(const InputParameters& params, const DerivedParameters& d_params, RandomNumberGenerator& rng);
+};
+
 class Deme {
     public:
     // Constructor
@@ -64,28 +86,6 @@ class DriverGenotype {
     void increment(int increment);
     void set_birth_rate(const InputParameters& params, RandomNumberGenerator& rng);
     void set_migration_rate(const InputParameters& params, RandomNumberGenerator& rng);
-};
-
-class Clone {
-    public:
-    // Properties
-    int population; // Number of cancer cells
-    int deme; // Index of the deme in which the clone is located
-    int genotype; // Identity of the clone
-    int driver_genotype; // Driver genotype of the clone
-    int driver_index; // Index of the driver genotype in the tumour
-    // TO DO: add driver index handling in relevant functions
-
-    int index_in_deme; // Index of the clone within its deme
-    int index; // index in tumour
-
-    std::vector<int> meth_array; // fCpG array of the clone
-
-    // Constructor
-    Clone(int population, int deme, int genotype, int driverGenotype, int indexInDeme);
-
-    // Methods
-    void initial_array(const InputParameters& params, const DerivedParameters& d_params, RandomNumberGenerator& rng);
 };
 
 #endif // OBJECTS_HPP

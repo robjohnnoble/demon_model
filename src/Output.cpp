@@ -10,7 +10,7 @@ void Tumour::print_to_screen(Tumour& tumour, const InputParameters& params, cons
     std::cout << "----------------------------------------------------------------" << std::endl;
 
     std::cout << tumour.gens_elapsed << " generations, " << tumour.iterations << " iterations" << std::endl;
-    std::cout << tumour.num_cells() << " cells, " << tumour.num_clones() << " clones, " << tumour.num_genotypes() << " genotypes, " << tumour.num_driver_genotypes() << " driver genotypes" << std::endl;
+    std::cout << tumour.num_cells() << " cells, " << tumour.num_clones() << " clones, " << tumour.num_driver_genotypes() << " driver genotypes, " << std::endl;
     //std::cout << num_matrix_cols << " matrix columns; " << next_genotype_id << " genotypes ever created" << std::endl;
     std::cout << tumour.num_demes() << " demes " <</* max_layer_needed_array[num_demes] + 1 << " bintree layers" <<*/ std::endl;
     std::cout << std::endl;
@@ -36,5 +36,5 @@ void Tumour::print_to_screen(Tumour& tumour, const InputParameters& params, cons
 }
 
 void Tumour::final_output() {
-
+    std::cout << "Placeholder." << std::endl;
 }

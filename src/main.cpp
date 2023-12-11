@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     boost::property_tree::ptree pt;
     boost::property_tree::info_parser::read_info(config_file_with_path, pt);
 
-    InputParameters params = read_parameters(pt);
+    InputParameters params = read_parameters(pt, config_file_with_path);
     run_sim(input_and_output_path, config_file_with_path, params);
 
     return 0;

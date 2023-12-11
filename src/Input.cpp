@@ -16,7 +16,7 @@ std::string get_input_path(int argc, char *argv[]) {
 }
 
 // read parameters from config file
-InputParameters read_parameters(const std::string& config_file_path) {
+InputParameters read_parameters(const boost::property_tree::ptree& pt, const std::string& config_file_path) {
     boost::property_tree::ptree pt;
     boost::property_tree::info_parser::read_info(config_file_path, pt);
 

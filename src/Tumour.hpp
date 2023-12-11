@@ -4,6 +4,7 @@
 #include "Parameters.hpp"
 #include "Distributions.hpp"
 #include "Objects.hpp"
+#include "Output.hpp"
 #include "Macros.hpp"
 #include <vector>
 #include <iostream>
@@ -30,6 +31,7 @@ class Tumour {
     double sum_migration_rates;
 
     public:
+    int iterations = 0;
     // initialise the tumour from input parameters
     void initialise(const InputParameters& params, const DerivedParameters& d_params, RandomNumberGenerator& rng);
     // sum of different rates in the tumour
@@ -37,25 +39,24 @@ class Tumour {
     double sum_of_all_rates();
 
     // deme fission
-    void deme_fission(Deme& deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params);
+    void deme_fission(int chosen_deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params);
     void remove_clone(Deme& deme, Clone& clone);
     void move_cells(Deme& parent, Deme& daughter, RandomNumberGenerator& rng, const InputParameters& params);
     void pseudo_fission(Deme& deme, RandomNumberGenerator& rng, const InputParameters& params);
 
     // cell division
     void cell_division(EventCounter& event_counter, RandomNumberGenerator& rng,
-        Deme& deme, Clone& clone, DriverGenotype& driver_genotype, const InputParameters& params);
+        int chosen_deme, int chosen_clone, const InputParameters& params);
     // cell death
-    void Tumour::cell_death(EventCounter& event_counter, Deme& deme, Clone& clone,
-    DriverGenotype& driver_genotype, const InputParameters& params);
-    void Tumour::remove_driver_genotype(DriverGenotype& driver_genotype);
+    void cell_death(EventCounter& event_counter, int chosen_deme, int chosen_clone, const InputParameters& params);
+    void remove_driver_genotype(DriverGenotype& driver_genotype);
     // create new genotype upon division
     void create_clone(Deme& deme, DriverGenotype& parent, const InputParameters& params,
         EventCounter& event_counter, RandomNumberGenerator& rng);
     // create new driver genotype upon division and add to driver genotypes
     void create_driver_genotype(Clone& clone, DriverGenotype& parent);
     // choose number of mutations upon division
-    std::vector<int> Tumour::choose_number_mutations(RandomNumberGenerator& rng, float mu_driver_birth, float mu_driver_migration, 
+    std::vector<int> choose_number_mutations(RandomNumberGenerator& rng, float mu_driver_birth, float mu_driver_migration, 
         std::vector<int>& new_birth_drivers, std::vector<int>& new_mig_drivers);
     // methylation
     void methylation(Clone& clone, DriverGenotype& driver_genotype, const InputParameters& params,
@@ -70,9 +71,9 @@ class Tumour {
     void calculate_deme_migration_rate(Deme& deme);
     
     // choose deme, clone and event type
-    int Tumour::choose_deme(RandomNumberGenerator& rng);
-    int Tumour::choose_clone(int chosen_deme, RandomNumberGenerator& rng);
-    std::string Tumour::choose_event_type();
+    int choose_deme(RandomNumberGenerator& rng);
+    int choose_clone(int chosen_deme, RandomNumberGenerator& rng);
+    std::string choose_event_type(int chosen_deme, int chosen_clone, RandomNumberGenerator& rng);
 
     // numbers of relevant things
     int num_cells();

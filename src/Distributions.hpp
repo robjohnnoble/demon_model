@@ -5,7 +5,7 @@
 
 class RandomNumberGenerator {
 public:
-    RandomNumberGenerator() : rng(std::random_device{}()), dist(0.0, 1.0) {}
+    RandomNumberGenerator() : rng(std::random_device()()), dist(0.0, 1.0) {}
 
     // Allow manual setting of the seed
     void set_seed(unsigned int seed) {
