@@ -33,23 +33,29 @@ void run_sim(const std::string& input_and_output_path,
         // perform event
         if (event_type == "birth") {
             tumour.cell_division(event_counter, rng, chosen_deme, chosen_clone, params);
+            if(tumour.fission_ready(chosen_deme, rng, true)) {
+                tumour.deme_fission(chosen_deme, event_counter, rng, params);
+            }
         }
         else if (event_type == "death") {
             tumour.cell_death(event_counter, chosen_deme, chosen_clone, params);
         }
-        else if (event_type == "fission") {
+        else if (event_type == "fission" && tumour.fission_ready(chosen_deme, rng, false)) {
             tumour.deme_fission(chosen_deme, event_counter, rng, params);
         }
 
-        std::cout << "Event_type: " << event_type << "\n";
-        std::cout << "Time: " << tumour.check_time() << "\n";
-        std::cout << "Number of cells: " << tumour.num_cells() << "\n";
-        std::cout << "Number of clones: " << tumour.num_clones() << "\n";
-        std::cout << "Number of driver genotypes: " << tumour.num_driver_genotypes() << "\n";
-        std::cout << "Number of demes: " << tumour.num_demes() << "\n";
+        if(tumour.iterations % 1000 == 0) {
+            std::cout << "Event_type: " << event_type << "\n";
+            std::cout << "Time: " << tumour.check_time() << "\n";
+            std::cout << "Number of cells: " << tumour.num_cells() << "\n";
+            std::cout << "Number of clones: " << tumour.num_clones() << "\n";
+            std::cout << "Number of driver genotypes: " << tumour.num_driver_genotypes() << "\n";
+            std::cout << "Number of demes: " << tumour.num_demes() << "\n";
+        }
 
         tumour.iterations++;
     }
 
-    tumour.final_output();
+    //tumour.final_output();
+    std::cout << "End of simulation." << std::endl;
 }

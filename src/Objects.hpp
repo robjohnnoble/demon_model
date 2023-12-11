@@ -16,7 +16,6 @@ class Clone {
     int genotype; // Identity of the clone
     int driver_genotype; // Driver genotype of the clone
     int driver_index; // Index of the driver genotype in the tumour
-    // TO DO: add driver index handling in relevant functions
 
     int index_in_deme; // Index of the clone within its deme
     int index; // index in tumour
@@ -24,7 +23,7 @@ class Clone {
     std::vector<int> meth_array; // fCpG array of the clone
 
     // Constructor
-    Clone(int population, int deme, int genotype, int driverGenotype, int indexInDeme, int driver_index);
+    Clone(int population, int deme, int genotype, int driverGenotype, int indexInDeme, int driver_index, int index);
 
     // Methods
     void initial_array(const InputParameters& params, const DerivedParameters& d_params, RandomNumberGenerator& rng);
@@ -33,11 +32,11 @@ class Clone {
 class Deme {
     public:
     // Constructor
-    Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float migrationModifier, float sumBirthRates, float sumMigrationRates);
+    Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float sumBirthRates, float sumMigrationRates);
 
     // Methods
     void calculate_sum_of_rates();
-    void calculate_average_array(const DerivedParameters& d_params, std::vector<Clone>& clones);
+    void calculate_average_array(const DerivedParameters& d_params);
     void increment(int increment, const InputParameters& params);
     void set_death_rate(const InputParameters& params);
     void remove_clone(Clone& clone);
@@ -49,11 +48,10 @@ class Deme {
 
     int identity; // Identity of the deme
     int population; // Number of cancer cells in the deme
-    std::vector<Clone*> clones_list; // List of clones in the deme
+    std::vector<int> clones_list; // List of clone indices in the deme
     int fissions; // fissions since the initial deme
 
     float death_rate; // Death rate of the deme
-    float migration_modifier; // factor by which migration rate is multiplied (depends on what cells are in the deme)
     std::vector<float> avg_meth_array; // Average methylation array of the deme
     float sum_birth_rates; // Sum of birth rates of the clones in the deme
     float sum_migration_rates; // Sum of migration rates of the clones in the deme

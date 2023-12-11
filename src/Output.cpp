@@ -1,6 +1,6 @@
 #include "Output.hpp"
 
-void Tumour::print_to_screen(Tumour& tumour, const InputParameters& params, const DerivedParameters& d_params, const EventCounter& event_counter) {
+void Tumour::print_to_screen(const InputParameters& params, const DerivedParameters& d_params, const EventCounter& event_counter) {
 
     std::cout << "Seed = " << params.seed << "; K = " << d_params.K << std::endl;
     std::cout << "Initial migration rate = " << params.init_migration_rate << std::endl;
@@ -9,10 +9,10 @@ void Tumour::print_to_screen(Tumour& tumour, const InputParameters& params, cons
     std::cout << "Mut effects: " << params.s_driver_birth << " (birth), " << params.s_driver_migration << " (mig)" << std::endl;
     std::cout << "----------------------------------------------------------------" << std::endl;
 
-    std::cout << tumour.gens_elapsed << " generations, " << tumour.iterations << " iterations" << std::endl;
-    std::cout << tumour.num_cells() << " cells, " << tumour.num_clones() << " clones, " << tumour.num_driver_genotypes() << " driver genotypes, " << std::endl;
+    std::cout << gens_elapsed << " generations, " << iterations << " iterations" << std::endl;
+    std::cout << num_cells() << " cells, " << num_clones() << " clones, " << num_driver_genotypes() << " driver genotypes, " << std::endl;
     //std::cout << num_matrix_cols << " matrix columns; " << next_genotype_id << " genotypes ever created" << std::endl;
-    std::cout << tumour.num_demes() << " demes " <</* max_layer_needed_array[num_demes] + 1 << " bintree layers" <<*/ std::endl;
+    std::cout << num_demes() << " demes " <</* max_layer_needed_array[num_demes] + 1 << " bintree layers" <<*/ std::endl;
     std::cout << std::endl;
     std::cout << "----------------------------------------------------------------" << std::endl;
 
@@ -35,6 +35,6 @@ void Tumour::print_to_screen(Tumour& tumour, const InputParameters& params, cons
     */
 }
 
-void Tumour::final_output() {
+/*void Tumour::final_output() {
     std::cout << "Placeholder." << std::endl;
-}
+}*/

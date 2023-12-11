@@ -2,28 +2,13 @@
 
 // Constructor
 Deme::Deme(int K, std::string side, int identity, int population, int fissions,
-    float deathRate, float migrationModifier, float sumBirthRates, float sumMigrationRates)
+    float deathRate, float sumBirthRates, float sumMigrationRates)
     : K(K), side(side), identity(identity), population(population), fissions(fissions),
-        death_rate(deathRate), migration_modifier(migrationModifier),
+        death_rate(deathRate),
         sum_birth_rates(sumBirthRates), sum_migration_rates(sumMigrationRates) {}
 
 void Deme::calculate_sum_of_rates() {
     sum_rates = sum_birth_rates + sum_migration_rates + death_rate;
-}
-
-// Methods
-void Deme::calculate_average_array(const DerivedParameters& d_params, std::vector<Clone>& clones) {
-    std::vector<float> res(d_params.fcpgs, 0);
-
-    for (int i = 0; i < clones_list.size(); i++) {
-        for (int j = 0; i < d_params.fcpgs; j++) {
-            res[j] += clones_list[i]->meth_array[j] * clones_list[i]->population;
-        }
-    }
-
-    for (int i = 0; i < d_params.fcpgs; i++) {
-        avg_meth_array[i] = res[i] / static_cast<float>(population);
-    }
 }
 
 // rates handling
