@@ -50,12 +50,12 @@ void run_sim(const std::string& input_and_output_path,
             int num_clones = tumour.num_clones();
             int num_driver_genotypes = tumour.num_driver_genotypes();
             int num_demes = tumour.num_demes();
-            std::cout << "Event_type: " << event_type << "\n";
-            std::cout << "Time: " << time << "\n";
-            std::cout << "Number of cells: " << num_cells << "\n";
-            std::cout << "Number of clones: " << num_clones << "\n";
-            std::cout << "Number of driver genotypes: " << num_driver_genotypes << "\n";
-            std::cout << "Number of demes: " << num_demes << "\n";
+            std::cout << "Event_type: " << event_type << std::endl;
+            std::cout << "Time: " << time << std::endl;
+            std::cout << "Number of cells: " << num_cells << std::endl;
+            std::cout << "Number of clones: " << num_clones << std::endl;
+            std::cout << "Number of driver genotypes: " << num_driver_genotypes << std::endl;
+            std::cout << "Number of demes: " << num_demes << std::endl;
         }
 
         tumour.iterations++;

@@ -20,15 +20,15 @@ class Tumour {
     int next_driver_genotype_id = 1;
 
     // temporal variables
-    float gens_elapsed;
-    float output_timer;
+    float gens_elapsed = 0;
+    float output_timer = 0;
     std::vector<int> fission_times;
-    int next_fission;    
+    int next_fission = 0;    
 
     // sums of rates
-    double sum_birth_rates;
-    double sum_death_rates;
-    double sum_migration_rates;
+    double sum_birth_rates = 0;
+    double sum_death_rates = 0;
+    double sum_migration_rates = 0;
 
     public:
     int iterations = 0;
