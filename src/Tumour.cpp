@@ -114,7 +114,7 @@ std::string Tumour::choose_event_type(int chosen_deme, int chosen_clone, RandomN
     }
 }
 
-// deme fission
+// indicator for fission at birth event
 bool Tumour::fission_ready(int chosen_deme, RandomNumberGenerator& rng, bool birth) {
     if (!birth) return demes[chosen_deme].population >= demes[chosen_deme].K;
     else {
@@ -122,14 +122,20 @@ bool Tumour::fission_ready(int chosen_deme, RandomNumberGenerator& rng, bool bir
             demes[chosen_deme].sum_migration_rates >= rng.unif_ran();
     }
 }
+
+// perform deme fission
 void Tumour::deme_fission(int chosen_deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params){
     int new_deme_id = static_cast<int>(demes.size());
     if (next_fission == fission_times[0]) {
         // first fission - sets up left and right sides of the tumour
         event_counter.fission++;
+        // create new deme
         Deme new_deme(demes[chosen_deme].K, std::string("right"), new_deme_id, 0, demes[chosen_deme].fissions + 1, 0, 0, 0);
+        // move cells into new deme
         move_cells(demes[chosen_deme], new_deme, rng, params);
+        // add new deme to tumour
         demes.push_back(new_deme);
+        // update next fission time
         next_fission = fission_times[1];
     } else if (gens_elapsed >= next_fission && new_deme_id < 8) {
         // subsequent fissions
@@ -137,75 +143,120 @@ void Tumour::deme_fission(int chosen_deme, EventCounter& event_counter, RandomNu
         Deme new_deme(demes[chosen_deme].K, demes[chosen_deme].side, new_deme_id, 0, demes[chosen_deme].fissions + 1, 0, 0, 0);
         move_cells(demes[chosen_deme], new_deme, rng, params);
         demes.push_back(new_deme);
-        if(next_fission != fission_times.back()) next_fission = fission_times[ - 1];
+        // update next fission time
+        if(next_fission != fission_times[6]) {
+            int tmp = demes.size() - 1;
+            next_fission = fission_times[tmp];
+        }
+        // if the last fission happened, set next fission to be after max_generations
         else next_fission = params.max_generations + 1;
     } else {
         // pseudo fission - kills half the population in a deme without creating a new deme
         event_counter.fission++;
+        // counts as a fission for the deme
         demes[chosen_deme].fissions++;
         pseudo_fission(demes[chosen_deme], rng, params);
     }
 }
-// move cells after deme fission
+// move cells into new deme after deme fission
 void Tumour::move_cells(Deme& parent, Deme& daughter, RandomNumberGenerator& rng, const InputParameters& params) {
-    int cells_to_move = rng.stochastic_round(parent.population / 2);
+    int num_cells_to_move = rng.stochastic_round(parent.population / 2);
     
     // create and shuffle a list of indices
-    std::vector<int> indices(parent.population);
+    std::vector<int> indices(parent.population); // vector of indices of clones in parent deme
     std::iota(indices.begin(), indices.end(), 0); // fill with 0, 1, 2, ..., parent.population - 1
-    std::shuffle(indices.begin(), indices.end(), rng.get_engine());
+    std::shuffle(indices.begin(), indices.end(), rng.get_engine()); // mix 'em up real good
     
-    // select the first cells_to_move indices and sort by descending order to avoid index errors
-    std::sort(indices.begin(), indices.begin() + cells_to_move, std::greater<int>());
+    // set of indices to move
+    std::set<int, std::greater<int> > indices_to_move;
+    for (int i = 0; i < num_cells_to_move; ++i) {
+        indices_to_move.insert(indices[i]);
+    }
 
     // move the corresponding clones
-    for (int i = 0; i < cells_to_move; i++) {
-        int index = indices[i];
-        daughter.clones_list.push_back(parent.clones_list[index]);
+    for (int i = 0; i < num_cells_to_move; i++) {
+        int index = indices[i]; // index of clones in parent deme
+        int clone_to_move = clones[parent.clones_list[index]].index; // index of clone in tumour
+        std::cout << "clone to move" << clone_to_move << std::endl
+            << "clone index in deme " << clones[clone_to_move].index_in_deme << std::endl;
+        daughter.clones_list.push_back(clone_to_move);
         // update deme for moved cell
-        clones[daughter.clones_list.back()].deme = daughter.identity;
+        clones[clone_to_move].deme = daughter.identity;
         // update index in deme for moved cell
-        clones[daughter.clones_list.back()].index_in_deme = daughter.clones_list.size() - 1;
+        clones[clone_to_move].index_in_deme = daughter.clones_list.size() - 1;
         parent.clones_list.erase(parent.clones_list.begin() + index);
     }
-    parent.increment(-cells_to_move, params);
-    daughter.increment(cells_to_move, params);
+    // update clone indices in parent deme
+    int new_population = parent.clones_list.size();
+    for (int i = 0; i < new_population; i++) {
+        int clone_to_update = clones[parent.clones_list[i]].index;
+        clones[clone_to_update].index_in_deme = i;
+        std::cout << "clone to update " << clone_to_update << std::endl
+            << "clone index in deme " << clones[clone_to_update].index_in_deme << std::endl;
+    }
+    parent.increment(-num_cells_to_move, params, "deme fission parent");
+    daughter.increment(num_cells_to_move, params, "deme fission daughter");
+    // std::cout << "successfully moved cells from deme " << parent.identity << " to deme " << daughter.identity << std::endl;
+    // for (int i = 0; i < parent.clones_list.size(); i++) {
+    //     std::cout << "clone " << i << " in deme " << parent.identity << " has index " << parent.clones_list[i] << std::endl;
+    // }
 }
+
 // pseudo fission
 void Tumour::pseudo_fission(Deme& parent, RandomNumberGenerator& rng, const InputParameters& params) {
     int cells_to_move = rng.stochastic_round(parent.population / 2);
     
     // create and shuffle a list of indices
-    std::vector<int> indices(parent.population);
+    int num_clones_in_deme = parent.clones_list.size();
+    std::vector<int> indices(num_clones_in_deme);
     std::iota(indices.begin(), indices.end(), 0); // fill with 0, 1, 2, ..., parent.population - 1
     std::shuffle(indices.begin(), indices.end(), rng.get_engine());
     
-    // select the first cells_to_move indices and sort by descending order to avoid index errors
-    std::sort(indices.begin(), indices.begin() + cells_to_move, std::greater<int>());
-
-    // move the corresponding clones
+    // set of indices to remove
+    std::set<int, std::greater<int> > indices_to_remove;
     for (int i = 0; i < cells_to_move; i++) {
-        int index = indices[i];
-        remove_clone(parent, clones[parent.clones_list[index]]);
+        indices_to_remove.insert(indices[i]);
     }
-    parent.increment(-cells_to_move, params);
+
+    // remove the corresponding clones
+    for (int index : indices_to_remove) {
+        if (index < parent.clones_list.size()) {
+            remove_clone(parent, clones[parent.clones_list[index]]);
+        } else {
+            // std::cout << "problem when removing clone " << index << "from deme" << parent.identity << std::endl;
+        }
+    }
+
+    parent.increment(-cells_to_move, params, "pseudo fission");
     calculate_deme_birth_rate(parent);
     calculate_deme_migration_rate(parent);
     parent.set_death_rate(params);
 }
 
-// remove clone from deme and clones list
+// remove clone from deme.clones_list and clones
 void Tumour::remove_clone(Deme& deme, Clone& clone) {
+    // Handle invalid index, e.g., log an error or throw an exception
+    if (clone.index_in_deme >= deme.clones_list.size() || clone.index >= clones.size()) {
+        std::cout << "clone index in deme: " << clone.index_in_deme
+            << "; clone index: " << clone.index
+            << "; chosen deme: " << deme.identity
+            << "; population: " << deme.population
+            << "; deme clones list size: " << deme.clones_list.size()
+            << std::endl;
+        return;
+    }
+
     // remove clone from deme
     deme.clones_list.erase(deme.clones_list.begin() + clone.index_in_deme);
     // remove clone from clones
     clones.erase(clones.begin() + clone.index);
     // update indices
-    for (int i = 0; i < deme.clones_list.size(); i++) {
-        clones[i].index_in_deme = i;
-    }
     for (int i = 0; i < clones.size(); i++) {
         clones[i].index = i;
+    }
+    for (int i = 0; i < deme.clones_list.size(); i++) {
+        int index = deme.clones_list[i];
+        clones[index].index_in_deme = i;
     }
 }
 // remove driver genotype from driver genotypes
@@ -223,13 +274,14 @@ void Tumour::cell_division(EventCounter& event_counter, RandomNumberGenerator& r
     int chosen_deme, int chosen_clone, const InputParameters& params) {
     // update event counter for birth
     event_counter.birth++;
-    demes[chosen_deme].increment(1, params);
+    // std::cout << "deme population before division " << demes[chosen_deme].clones_list.size() << std::endl;
 
     std::vector<int> new_birth_drivers(2,0), new_mig_drivers(2,0);
     std::vector<int> new_mutations = choose_number_mutations(rng, params.mu_driver_birth, params.mu_driver_migration, new_birth_drivers, new_mig_drivers);
     if(!new_mutations[0] && !new_mutations[1]) {
         driver_genotypes[clones[chosen_clone].driver_index].increment(1);
         create_clone(clones[chosen_clone], demes[chosen_deme], driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index], params, event_counter, rng);
+        demes[chosen_deme].increment(1, params, "cell division");
     }
     else {
         // update event counter for mutations
@@ -238,7 +290,9 @@ void Tumour::cell_division(EventCounter& event_counter, RandomNumberGenerator& r
         for (int i = 0; i < 2; i++) {
             if(new_birth_drivers[i] || new_mig_drivers[i]) {
                 // create clone and perform methylation
-                create_clone(clones[chosen_clone], demes[chosen_deme], driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index], params, event_counter, rng);
+                create_clone(clones[chosen_clone], demes[chosen_deme],
+                    driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index],
+                    params, event_counter, rng);
                 // update driver id
                 clones.back().driver_genotype = next_driver_genotype_id;
                 create_driver_genotype(clones[demes[chosen_deme].clones_list[chosen_clone]], driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index]);
@@ -252,7 +306,8 @@ void Tumour::cell_division(EventCounter& event_counter, RandomNumberGenerator& r
                 methylation(clones[demes[chosen_deme].clones_list[chosen_clone]], driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index], params, event_counter, rng);
             }
         }
-        
+        demes[chosen_deme].increment(1, params, "cell division with mutation");
+
         if (new_mutations[0] && new_mutations[1]) {
             driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index].increment(-1);
             if (!driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index].immortal) {
@@ -262,16 +317,25 @@ void Tumour::cell_division(EventCounter& event_counter, RandomNumberGenerator& r
     }
     calculate_deme_birth_rate(demes[chosen_deme]);
     calculate_deme_migration_rate(demes[chosen_deme]);
+    // std::cout << "deme" << demes[chosen_deme].identity << " population after division "
+    //     << demes[chosen_deme].clones_list.size() << std::endl;
 }
 // death of cancer cells
 void Tumour::cell_death(EventCounter& event_counter, int chosen_deme, int chosen_clone, const InputParameters& params) {
+    // update event counter for death
     event_counter.death++;
-    demes[chosen_deme].increment(-1, params);
+
+    // update driver genotype population
     driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index].increment(-1);
+
+    // if the driver genotype has reached a population of 0, remove it
     if (!driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index].immortal) {
         remove_driver_genotype(driver_genotypes[clones[demes[chosen_deme].clones_list[chosen_clone]].driver_index]);
     }
+    // remove clone from deme.clones_list and clones
     remove_clone(demes[chosen_deme], clones[demes[chosen_deme].clones_list[chosen_clone]]);
+
+    demes[chosen_deme].increment(-1, params, "cell death");
 }
 
 // perform methylation without altering the genotype or clone
@@ -308,7 +372,14 @@ void Tumour::calculate_average_array(Deme& deme, const DerivedParameters& d_para
 // create new clone upon division and perform methylation - still part of parents' driver genotype
 void Tumour::create_clone(const Clone& parent, Deme& deme, DriverGenotype& parent_genotype, const InputParameters& params, 
     EventCounter& event_counter, RandomNumberGenerator& rng) {
-    Clone clone(1, deme.identity, next_genotype_id++, parent_genotype.driver_identity, deme.clones_list.size(), parent.driver_index, clones.size());
+    // aux variables
+    int num_clones_in_deme = deme.clones_list.size();
+    int new_clone_index = clones.size();
+
+    // initialise new clone
+    Clone clone(1, deme.identity, next_genotype_id++,
+        parent_genotype.driver_identity, num_clones_in_deme,
+        parent.driver_index, new_clone_index);
     clone.driver_index = parent.driver_index;
     // copy meth array into new clone
     clone.meth_array.clear();
@@ -317,9 +388,21 @@ void Tumour::create_clone(const Clone& parent, Deme& deme, DriverGenotype& paren
     }
     // perform methylation
     methylation(clone, parent_genotype, params, event_counter, rng);
+
     clones.push_back(clone);
-    deme.clones_list.push_back(clones.back().index);
+    // update clones indices
+    int ctr = 0;
+    deme.clones_list.clear();
+    for (int i = 0; i < clones.size(); i++) {
+        clones[i].index = i;
+        if (clones[i].deme == deme.identity) {
+            clones[i].index_in_deme = ctr;
+            deme.clones_list.push_back(i);
+            ctr++;
+        }
+    }
 }
+
 // create new driver genotype upon division and add to driver genotypes
 void Tumour::create_driver_genotype(const Clone& clone, DriverGenotype& parent) {
     DriverGenotype driver_genotype(1, clone.driver_genotype, next_driver_genotype_id++, 
@@ -342,11 +425,11 @@ std::vector<int> Tumour::choose_number_mutations(RandomNumberGenerator& rng, flo
 
 // calculate sums of different rates in the whole tumour
 void Tumour::calculate_sums_of_rates() {
+    sum_death_rates = 0;
+    sum_birth_rates = 0;
+    sum_migration_rates = 0;
     for (int i = 0; i < demes.size(); i++) {
         demes[i].calculate_sum_of_rates();
-        // std::cout << "Deme " << i << " birth rate: " << demes[i].sum_birth_rates <<
-        //     "; death rate: " << demes[i].death_rate <<
-        //     "; migration rate: " << demes[i].sum_migration_rates << std::endl;
         sum_death_rates += demes[i].death_rate * demes[i].population;
         sum_birth_rates += demes[i].sum_birth_rates;
         sum_migration_rates += demes[i].sum_migration_rates;

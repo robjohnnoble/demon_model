@@ -6,6 +6,8 @@
 #include "Objects.hpp"
 #include "Output.hpp"
 #include "Macros.hpp"
+#include <set>
+#include <functional>
 #include <vector>
 #include <iostream>
 

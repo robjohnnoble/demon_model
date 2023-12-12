@@ -37,7 +37,7 @@ class Deme {
     // Methods
     void calculate_sum_of_rates();
     void calculate_average_array(const DerivedParameters& d_params);
-    void increment(int increment, const InputParameters& params);
+    void increment(int increment, const InputParameters& params, std::string origin);
     void set_death_rate(const InputParameters& params);
     void remove_clone(Clone& clone);
 

@@ -29,7 +29,7 @@ void run_sim(const std::string& input_and_output_path,
         // select event type
         std::string event_type = tumour.choose_event_type(chosen_deme, chosen_clone, rng);
 
-        // perform event
+        // perform event - all updates are handled within the functions
         if (event_type == "birth") {
             tumour.cell_division(event_counter, rng, chosen_deme, chosen_clone, params);
             if(tumour.fission_ready(chosen_deme, rng, true)) {
