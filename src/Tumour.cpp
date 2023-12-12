@@ -123,20 +123,21 @@ bool Tumour::fission_ready(int chosen_deme, RandomNumberGenerator& rng, bool bir
     }
 }
 void Tumour::deme_fission(int chosen_deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params){
+    int new_deme_id = static_cast<int>(demes.size());
     if (next_fission == fission_times[0]) {
         // first fission - sets up left and right sides of the tumour
         event_counter.fission++;
-        Deme new_deme(demes[chosen_deme].K, std::string("right"), static_cast<int>(demes.size()), 0, demes[chosen_deme].fissions + 1, 0, 0, 0);
+        Deme new_deme(demes[chosen_deme].K, std::string("right"), new_deme_id, 0, demes[chosen_deme].fissions + 1, 0, 0, 0);
         move_cells(demes[chosen_deme], new_deme, rng, params);
         demes.push_back(new_deme);
         next_fission = fission_times[1];
     } else if (gens_elapsed >= next_fission) {
         // subsequent fissions
         event_counter.fission++;
-        Deme new_deme(demes[chosen_deme].K, demes[chosen_deme].side, static_cast<int>(demes.size()), 0, demes[chosen_deme].fissions + 1, 0, 0, 0);
+        Deme new_deme(demes[chosen_deme].K, demes[chosen_deme].side, new_deme_id, 0, demes[chosen_deme].fissions + 1, 0, 0, 0);
         move_cells(demes[chosen_deme], new_deme, rng, params);
         demes.push_back(new_deme);
-        if(next_fission != fission_times.back()) next_fission = fission_times[demes.size() - 1];
+        if(next_fission != fission_times.back()) next_fission = fission_times[ - 1];
         else next_fission = params.max_generations + 1;
     } else {
         // pseudo fission - kills half the population in a deme without creating a new deme
