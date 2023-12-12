@@ -400,16 +400,28 @@ float Tumour::get_clone_migration(const Clone& clone) {
 // deme rates
 void Tumour::calculate_deme_birth_rate(Deme& deme) {
     float birth_rate = 0;
-    for (int i = 0; i < deme.clones_list.size(); i++) {
-        birth_rate += get_clone_birth(clones[deme.clones_list[i]]);
+    int num_clones_in_deme = deme.clones_list.size();
+    if(!num_clones_in_deme) {
+        std::cout << "No clones in deme" << std::endl;
+        return;
+    }
+    for (int i = 0; i < num_clones_in_deme; i++) {
+        int clones_index = deme.clones_list[i];
+        birth_rate += get_clone_birth(clones[clones_index]);
     }
     deme.sum_birth_rates = birth_rate;
 }
 
 void Tumour::calculate_deme_migration_rate(Deme& deme) {
     float migration_rate = 0;
-    for (int i = 0; i < deme.clones_list.size(); i++) {
-        migration_rate += get_clone_migration(clones[deme.clones_list[i]]);
+    int num_clones_in_deme = deme.clones_list.size();
+    if(!num_clones_in_deme) {
+        std::cout << "No clones in deme" << std::endl;
+        return;
+    }
+    for (int i = 0; i < num_clones_in_deme; i++) {
+        int clones_index = deme.clones_list[i];
+        migration_rate += get_clone_migration(clones[clones_index]);
     }
     deme.sum_migration_rates = migration_rate;
 }
