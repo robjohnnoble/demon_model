@@ -247,16 +247,13 @@ void Tumour::remove_clone(Deme& deme, Clone& clone) {
     }
 
     // remove clone from deme
-    deme.clones_list.erase(deme.clones_list.begin() + clone.index_in_deme);
+    removeCloneFromDeme(clone.index, deme.identity);
     // remove clone from clones
-    clones.erase(clones.begin() + clone.index);
-    // update indices
-    for (int i = 0; i < clones.size(); i++) {
-        clones[i].index = i;
-    }
-    for (int i = 0; i < deme.clones_list.size(); i++) {
-        int index = deme.clones_list[i];
-        clones[index].index_in_deme = i;
+    if (clone.index < clones.size()) {
+        std::swap(clones[clone.index], clones.back());
+        clones.pop_back();
+        // Update the index of the moved clone
+        clones[clone.index].index = clone.index;
     }
 }
 // remove driver genotype from driver genotypes
@@ -372,33 +369,38 @@ void Tumour::calculate_average_array(Deme& deme, const DerivedParameters& d_para
 // create new clone upon division and perform methylation - still part of parents' driver genotype
 void Tumour::create_clone(const Clone& parent, Deme& deme, DriverGenotype& parent_genotype, const InputParameters& params, 
     EventCounter& event_counter, RandomNumberGenerator& rng) {
-    // aux variables
-    int num_clones_in_deme = deme.clones_list.size();
-    int new_clone_index = clones.size();
+        Clone daughter(1, deme.identity, next_genotype_id++, parent.driver_genotype,
+            deme.clones_list.size(), parent.driver_index, clones.size());
+        
+        // copy methylation array from parent
+        daughter.meth_array = parent.meth_array;
+        // perform methylation
+        methylation(daughter, parent_genotype, params, event_counter, rng);
+        // add clone to deme
+        deme.clones_list.push_back(daughter.index);
+        // add clone to tumour
+        clones.push_back(daughter);
+}   
 
-    // initialise new clone
-    Clone clone(1, deme.identity, next_genotype_id++,
-        parent_genotype.driver_identity, num_clones_in_deme,
-        parent.driver_index, new_clone_index);
-    clone.driver_index = parent.driver_index;
-    // copy meth array into new clone
-    clone.meth_array.clear();
-    for (int i = 0; i < parent.meth_array.size(); i++) {
-        clone.meth_array.push_back(parent.meth_array[i]);
-    }
-    // perform methylation
-    methylation(clone, parent_genotype, params, event_counter, rng);
+// remove clone index from target deme
+void Tumour::removeCloneFromDeme(int cloneIndex, int demeIndex) {
+    if (demeIndex < demes.size()) {
+        Deme& deme = demes[demeIndex];
 
-    clones.push_back(clone);
-    // update clones indices
-    int ctr = 0;
-    deme.clones_list.clear();
-    for (int i = 0; i < clones.size(); i++) {
-        clones[i].index = i;
-        if (clones[i].deme == deme.identity) {
-            clones[i].index_in_deme = ctr;
-            deme.clones_list.push_back(i);
-            ctr++;
+        // Find the position of the clone's index in Deme::clones_list
+        auto it = std::find(deme.clones_list.begin(), deme.clones_list.end(), cloneIndex);
+
+        if (it != deme.clones_list.end()) {
+            // Remove the index from Deme::clones_list
+            deme.clones_list.erase(it);
+
+            // Update index_in_deme for subsequent clones
+            for (size_t i = std::distance(deme.clones_list.begin(), it); i < deme.clones_list.size(); ++i) {
+                int updatedCloneIndex = deme.clones_list[i];
+                if (updatedCloneIndex < clones.size()) {
+                    clones[updatedCloneIndex].index_in_deme = i;
+                }
+            }
         }
     }
 }
