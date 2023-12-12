@@ -45,12 +45,17 @@ void run_sim(const std::string& input_and_output_path,
         }
 
         if(tumour.iterations % 1000 == 0) {
+            float time = tumour.check_time();
+            int num_cells = tumour.num_cells();
+            int num_clones = tumour.num_clones();
+            int num_driver_genotypes = tumour.num_driver_genotypes();
+            int num_demes = tumour.num_demes();
             std::cout << "Event_type: " << event_type << "\n";
-            std::cout << "Time: " << tumour.check_time() << "\n";
-            std::cout << "Number of cells: " << tumour.num_cells() << "\n";
-            std::cout << "Number of clones: " << tumour.num_clones() << "\n";
-            std::cout << "Number of driver genotypes: " << tumour.num_driver_genotypes() << "\n";
-            std::cout << "Number of demes: " << tumour.num_demes() << "\n";
+            std::cout << "Time: " << time << "\n";
+            std::cout << "Number of cells: " << num_cells << "\n";
+            std::cout << "Number of clones: " << num_clones << "\n";
+            std::cout << "Number of driver genotypes: " << num_driver_genotypes << "\n";
+            std::cout << "Number of demes: " << num_demes << "\n";
         }
 
         tumour.iterations++;
