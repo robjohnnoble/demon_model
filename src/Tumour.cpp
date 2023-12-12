@@ -290,7 +290,7 @@ void Tumour::methylation(Clone& clone, DriverGenotype& driver_genotype, const In
 
 void Tumour::calculate_average_array(Deme& deme, const DerivedParameters& d_params) {
     std::vector<float> res(d_params.fcpgs, 0);
-    deme.avg_meth_array.clear();
+    deme.avg_meth_array = std::vector<float>(d_params.fcpgs, 0);
 
     if (!deme.clones_list.size()) std::cout << "No clones in deme" << std::endl;
     for (int i = 0; i < deme.clones_list.size(); i++) {
@@ -300,7 +300,7 @@ void Tumour::calculate_average_array(Deme& deme, const DerivedParameters& d_para
     }
 
     for (int i = 0; i < d_params.fcpgs; i++) {
-        deme.avg_meth_array.push_back(res[i] / static_cast<float>(deme.population));
+        deme.avg_meth_array[i] = res[i] / static_cast<float>(deme.population);
     }
 }
 
