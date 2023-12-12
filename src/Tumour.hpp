@@ -44,7 +44,7 @@ class Tumour {
     bool fission_ready(int chosen_deme, RandomNumberGenerator& rng, bool birth);
     void deme_fission(int chosen_deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params);
     void remove_clone(Deme& deme, Clone& clone);
-    void removeCloneFromDeme(int cloneIndex, int demeIndex);
+    void remove_clone_from_deme(int cloneIndex, int demeIndex);
     void move_cells(Deme& parent, Deme& daughter, RandomNumberGenerator& rng, const InputParameters& params);
     void pseudo_fission(Deme& deme, RandomNumberGenerator& rng, const InputParameters& params);
 
