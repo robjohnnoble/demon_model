@@ -131,7 +131,7 @@ void Tumour::deme_fission(int chosen_deme, EventCounter& event_counter, RandomNu
         move_cells(demes[chosen_deme], new_deme, rng, params);
         demes.push_back(new_deme);
         next_fission = fission_times[1];
-    } else if (gens_elapsed >= next_fission) {
+    } else if (gens_elapsed >= next_fission && new_deme_id < 8) {
         // subsequent fissions
         event_counter.fission++;
         Deme new_deme(demes[chosen_deme].K, demes[chosen_deme].side, new_deme_id, 0, demes[chosen_deme].fissions + 1, 0, 0, 0);
@@ -343,6 +343,10 @@ std::vector<int> Tumour::choose_number_mutations(RandomNumberGenerator& rng, flo
 // calculate sums of different rates in the whole tumour
 void Tumour::calculate_sums_of_rates() {
     for (int i = 0; i < demes.size(); i++) {
+        demes[i].calculate_sum_of_rates();
+        // std::cout << "Deme " << i << " birth rate: " << demes[i].sum_birth_rates <<
+        //     "; death rate: " << demes[i].death_rate <<
+        //     "; migration rate: " << demes[i].sum_migration_rates << std::endl;
         sum_death_rates += demes[i].death_rate * demes[i].population;
         sum_birth_rates += demes[i].sum_birth_rates;
         sum_migration_rates += demes[i].sum_migration_rates;
@@ -350,14 +354,16 @@ void Tumour::calculate_sums_of_rates() {
 }
 
 double Tumour::sum_of_all_rates() {
+    calculate_sums_of_rates();
     return sum_birth_rates + sum_death_rates + sum_migration_rates;
 }
 
 // update time
 void Tumour::update_time(RandomNumberGenerator& rng, const InputParameters& params) {
     float temp_sum = sum_of_all_rates();
+    // std::cout << "Sum of all rates: " << temp_sum << std::endl;
 
-    float gens_added = rng.exp(1);
+    float gens_added = rng.exp(1) / temp_sum;
     gens_elapsed += gens_added;
     output_timer += gens_added;
 }

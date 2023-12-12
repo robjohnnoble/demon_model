@@ -20,7 +20,6 @@ void run_sim(const std::string& input_and_output_path,
     // sort out column headers in output files
 
     while(tumour.check_time() < params.max_generations) {
-        tumour.update_time(rng, params);
 
         // choose deme, weights determined by number of rates
         int chosen_deme = tumour.choose_deme(rng);
@@ -44,14 +43,14 @@ void run_sim(const std::string& input_and_output_path,
             tumour.deme_fission(chosen_deme, event_counter, rng, params);
         }
 
-        if(tumour.iterations % 1000 == 0) {
+        if(tumour.iterations % 10000 == 0) {
             float time = tumour.check_time();
             int num_cells = tumour.num_cells();
             int num_clones = tumour.num_clones();
             int num_driver_genotypes = tumour.num_driver_genotypes();
             int num_demes = tumour.num_demes();
             std::cout << "Event_type: " << event_type << std::endl;
-            std::cout << "Time: " << time << std::endl;
+            std::cout << "Generations elapsed: " << time << std::endl;
             std::cout << "Number of cells: " << num_cells << std::endl;
             std::cout << "Number of clones: " << num_clones << std::endl;
             std::cout << "Number of driver genotypes: " << num_driver_genotypes << std::endl;
@@ -59,6 +58,7 @@ void run_sim(const std::string& input_and_output_path,
         }
 
         tumour.iterations++;
+        tumour.update_time(rng, params);
     }
 
     //tumour.final_output();
