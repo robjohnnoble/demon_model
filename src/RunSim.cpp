@@ -15,12 +15,16 @@ void run_sim(const std::string& input_and_output_path,
 
     // initialise event counter
     EventCounter event_counter;
+
+    std::cout << "Initialised simulation." << std::endl;
     
     // open output files
     // sort out column headers in output files
 
     while(tumour.check_time() < params.max_generations) {
 
+        // update all rate sums
+        tumour.calculate_all_rates(params, d_params);
         // choose deme, weights determined by number of rates
         int chosen_deme = tumour.choose_deme(rng);
 
@@ -29,7 +33,7 @@ void run_sim(const std::string& input_and_output_path,
         // select event type
         std::string event_type = tumour.choose_event_type(chosen_deme, chosen_clone, rng);
 
-        // perform event - all updates are handled within the functions
+        // perform event
         if (event_type == "birth") {
             tumour.cell_division(event_counter, rng, chosen_deme, chosen_clone, params);
             if(tumour.fission_ready(chosen_deme, rng, true)) {
@@ -43,7 +47,11 @@ void run_sim(const std::string& input_and_output_path,
             tumour.deme_fission(chosen_deme, event_counter, rng, params);
         }
 
-        if(tumour.iterations % 10000 == 0) {
+        for (int i = 0; i < tumour.num_demes(); i++) {
+            tumour.calculate_average_array(i, d_params);
+        }
+
+        if(tumour.iterations % 100 == 0) {
             float time = tumour.check_time();
             int num_cells = tumour.num_cells();
             int num_clones = tumour.num_clones();

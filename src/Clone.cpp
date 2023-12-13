@@ -1,8 +1,8 @@
 #include "Objects.hpp"
 
 // Constructor
-Clone::Clone(int population, int deme, int genotype, int driverGenotype, int indexInDeme, int driver_index, int index)
-    : population(population), deme(deme), genotype(genotype), driver_genotype(driverGenotype), index_in_deme(indexInDeme), driver_index(driver_index), index(index) {}
+Clone::Clone(int population, int deme, int genotype, int driverGenotype, int driver_index, int index)
+    : population(population), deme(deme), genotype(genotype), driver_genotype(driverGenotype), driver_index(driver_index), index(index) {}
 
 // Methods
 void Clone::initial_array(const InputParameters& params, const DerivedParameters& d_params, RandomNumberGenerator& rng) {

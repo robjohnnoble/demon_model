@@ -18,13 +18,12 @@ class Clone {
     int driver_genotype; // Driver genotype of the clone
     int driver_index; // Index of the driver genotype in the tumour
 
-    int index_in_deme; // Index of the clone within its deme
     int index; // index in tumour
 
     std::vector<int> meth_array; // fCpG array of the clone
 
     // Constructor
-    Clone(int population, int deme, int genotype, int driverGenotype, int indexInDeme, int driver_index, int index);
+    Clone(int population, int deme, int genotype, int driverGenotype, int driver_index, int index);
 
     // Methods
     void initial_array(const InputParameters& params, const DerivedParameters& d_params, RandomNumberGenerator& rng);
@@ -49,7 +48,7 @@ class Deme {
 
     int identity; // Identity of the deme
     int population; // Number of cancer cells in the deme
-    std::vector<int> clones_list; // List of clone indices in the deme
+    std::set<int> clones_list; // List of clone indices in the deme
     int fissions; // fissions since the initial deme
 
     float death_rate; // Death rate of the deme

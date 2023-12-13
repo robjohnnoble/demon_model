@@ -43,7 +43,7 @@ class Tumour {
     // deme fission
     bool fission_ready(int chosen_deme, RandomNumberGenerator& rng, bool birth);
     void deme_fission(int chosen_deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params);
-    void remove_clone(Deme& deme, Clone& clone);
+    void remove_clone(Clone& clone);
     void remove_clone_from_deme(int cloneIndex, int demeIndex);
     void move_cells(Deme& parent, Deme& daughter, RandomNumberGenerator& rng, const InputParameters& params);
     void pseudo_fission(Deme& deme, RandomNumberGenerator& rng, const InputParameters& params);
@@ -65,7 +65,7 @@ class Tumour {
     // methylation
     void methylation(Clone& clone, DriverGenotype& driver_genotype, const InputParameters& params,
         EventCounter& event_counter, RandomNumberGenerator& rng);
-    void calculate_average_array(Deme& deme, const DerivedParameters& d_params);
+    void calculate_average_array(int deme_index, const DerivedParameters& d_params);
 
     // clone rates
     float get_clone_birth(const Clone& clone);
@@ -74,6 +74,7 @@ class Tumour {
     // deme rates
     void calculate_deme_birth_rate(Deme& deme);
     void calculate_deme_migration_rate(Deme& deme);
+    void calculate_all_rates(const InputParameters& params, const DerivedParameters& d_params);
     
     // choose deme, clone and event type
     int choose_deme(RandomNumberGenerator& rng);

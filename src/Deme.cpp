@@ -17,7 +17,7 @@ void Deme::set_death_rate(const InputParameters& params) {
         death_rate = params.baseline_death_rate;
     }
     else {
-        death_rate = params.baseline_death_rate + 1000;
+        death_rate = params.baseline_death_rate + 100;
     }
 }
 
