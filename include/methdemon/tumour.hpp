@@ -1,11 +1,12 @@
 #ifndef TUMOUR_HPP
 #define TUMOUR_HPP
 
-#include "Parameters.hpp"
-#include "Distributions.hpp"
-#include "Objects.hpp"
-#include "Output.hpp"
-#include "Macros.hpp"
+#include "parameters.hpp"
+#include "distributions.hpp"
+#include "deme.hpp"
+#include "genotype.hpp"
+#include "output.hpp"
+#include "macros.hpp"
 #include <set>
 #include <functional>
 #include <vector>
@@ -13,10 +14,11 @@
 
 class Tumour {
     private:
-    // objects
+    // cell containers
     std::vector<Deme> demes;
-    std::vector<Clone> clones;
-    std::vector<DriverGenotype> driver_genotypes;
+    std::vector<Genotype> genotypes;
+    // cell tracking
+    int next_cell_id;
     // aux variables
     int next_genotype_id = 1;
     int next_driver_genotype_id = 1;
@@ -33,9 +35,8 @@ class Tumour {
     double sum_migration_rates = 0;
 
     public:
-    int iterations = 0;
     // initialise the tumour from input parameters
-    void initialise(const InputParameters& params, const DerivedParameters& d_params, RandomNumberGenerator& rng);
+    void initialise(const InputParameters& params, const DerivedParameters& d_params);
     // sum of different rates in the tumour
     void calculate_sums_of_rates();
     double sum_of_all_rates();
@@ -43,47 +44,47 @@ class Tumour {
     // deme fission
     bool fission_ready(int chosen_deme, RandomNumberGenerator& rng, bool birth);
     void deme_fission(int chosen_deme, EventCounter& event_counter, RandomNumberGenerator& rng, const InputParameters& params);
-    void remove_clone(Clone& clone);
-    void remove_clone_from_deme(int cloneIndex, int demeIndex);
+    void remove_cell(Cell& cell);
+    void remove_cell_from_deme(int cellIndex, int demeIndex);
     void move_cells(Deme& parent, Deme& daughter, RandomNumberGenerator& rng, const InputParameters& params);
     void pseudo_fission(Deme& deme, RandomNumberGenerator& rng, const InputParameters& params);
 
     // cell division
     void cell_division(EventCounter& event_counter, RandomNumberGenerator& rng,
-        int chosen_deme, int chosen_clone, const InputParameters& params);
+        int chosen_deme, int chosen_cell, const InputParameters& params);
     // cell death
-    void cell_death(EventCounter& event_counter, int chosen_deme, int chosen_clone, const InputParameters& params);
+    void cell_death(EventCounter& event_counter, int chosen_deme, int chosen_cell, const InputParameters& params);
     void remove_driver_genotype(DriverGenotype& driver_genotype);
     // create new genotype upon division
-    void create_clone(const Clone& parent, Deme& deme, DriverGenotype& parent_genotype, const InputParameters& params,
+    void create_cell(const Cell& parent, Deme& deme, DriverGenotype& parent_genotype, const InputParameters& params,
         EventCounter& event_counter, RandomNumberGenerator& rng);
     // create new driver genotype upon division and add to driver genotypes
-    void create_driver_genotype(const Clone& clone, DriverGenotype& parent);
+    void create_driver_genotype(const Cell& cell, DriverGenotype& parent);
     // choose number of mutations upon division
     std::vector<int> choose_number_mutations(RandomNumberGenerator& rng, float mu_driver_birth, float mu_driver_migration, 
         std::vector<int>& new_birth_drivers, std::vector<int>& new_mig_drivers);
     // methylation
-    void methylation(Clone& clone, DriverGenotype& driver_genotype, const InputParameters& params,
+    void methylation(Cell& cell, DriverGenotype& driver_genotype, const InputParameters& params,
         EventCounter& event_counter, RandomNumberGenerator& rng);
     void calculate_average_array(int deme_index, const DerivedParameters& d_params);
 
-    // clone rates
-    float get_clone_birth(const Clone& clone);
-    float get_clone_migration(const Clone& clone);
+    // cell rates
+    float get_cell_birth(const Cell& cell);
+    float get_cell_migration(const Cell& cell);
     
     // deme rates
     void calculate_deme_birth_rate(Deme& deme);
     void calculate_deme_migration_rate(Deme& deme);
     void calculate_all_rates(const InputParameters& params, const DerivedParameters& d_params);
     
-    // choose deme, clone and event type
+    // choose deme, cell and event type
     int choose_deme(RandomNumberGenerator& rng);
-    int choose_clone(int chosen_deme, RandomNumberGenerator& rng);
-    std::string choose_event_type(int chosen_deme, int chosen_clone, RandomNumberGenerator& rng);
+    int choose_cell(int chosen_deme, RandomNumberGenerator& rng);
+    std::string choose_event_type(int chosen_deme, int chosen_cell, RandomNumberGenerator& rng);
 
     // numbers of relevant things
     int num_cells();
-    int num_clones();
+    int num_cells();
     int num_driver_genotypes();
     int num_demes();
     

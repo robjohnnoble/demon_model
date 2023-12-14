@@ -1,10 +1,6 @@
-#include "Initialise.hpp"
-#include "Macros.hpp"
-#include "Objects.hpp"
+#include "initialise.hpp"
 
-#include <cmath>
-
-DerivedParameters derived_parameters(const InputParameters& params){
+DerivedParameters derive_parameters(const InputParameters& params){
     DerivedParameters d_params;
     d_params.K = std::pow(2, params.log2_deme_carrying_capacity);
     d_params.fcpgs = params.fCpG_loci_per_cell * 2;

@@ -1,27 +1,18 @@
-#include "Tumour.hpp"
+#include "tumour.hpp"
 
-// initialise tumour from input parameters
+/////// Initialise tumour
 void Tumour::initialise(const InputParameters& params,
-    const DerivedParameters& d_params, RandomNumberGenerator& rng) {
+    const DerivedParameters& d_params) {
+    demes.clear();
+    genotypes.clear();
     // driver genotypes:
-    DriverGenotype driver_genotype(params.init_pop, 0, 0, 0, 0, 0, 0, true, 1, params.init_migration_rate, 0);
-    driver_genotype.index = 0;
-    driver_genotypes.push_back(driver_genotype);
-
-    // clones:
-    Clone clone(1, 0, 0, 0, 0, 0);
-    clone.initial_array(params, d_params, rng);
-    clones.push_back(clone);
-    // for (int i = 0; i < d_params.fcpgs; i++)
-    //     std::cout << clone.meth_array[i];
-    // std::cout << std::endl;
+    Genotype firstGenotype(params.init_pop, 0, 0, 0, 0, 0, 0, 0, true, 0);
+    genotypes.push_back(firstGenotype);
 
     // demes:
-    Deme deme(d_params.K, "left", 0, 1, 0, params.baseline_death_rate, 1, params.init_migration_rate);
-    deme.clones_list.insert(0);
-    deme.calculate_sum_of_rates();
-    demes.push_back(deme);
-    calculate_average_array(0, d_params);
+    Deme firstDeme(d_params.K, "left", 0, 1, 0, params.baseline_death_rate, 1, params.init_migration_rate);
+    demes.push_back(firstDeme);
+    firstDeme.initialise(params, d_params);
 
     // fission times
     fission_times.push_back(params.time0);

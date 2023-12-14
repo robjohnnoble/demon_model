@@ -1,13 +1,9 @@
-#include "RunSim.hpp"
+#include "runsim.hpp"
 
 void run_sim(const std::string& input_and_output_path,
     const std::string& config_file_with_path, const InputParameters& params) {
-    // initialise random number generator
-    RandomNumberGenerator rng;
-    rng.set_seed(params.seed);
-
-    // initialise derived parameters
-    DerivedParameters d_params = derived_parameters(params);
+    // derive derived parameters
+    DerivedParameters d_params = derive_parameters(params);
 
     // initialise tumour
     Tumour tumour;

@@ -1,6 +1,6 @@
 #include "Output.hpp"
 
-void Tumour::print_to_screen(const InputParameters& params, const DerivedParameters& d_params, const EventCounter& event_counter) {
+void print_to_screen(const InputParameters& params, const DerivedParameters& d_params, const EventCounter& event_counter) {
 
     std::cout << "Seed = " << params.seed << "; K = " << d_params.K << std::endl;
     std::cout << "Initial migration rate = " << params.init_migration_rate << std::endl;

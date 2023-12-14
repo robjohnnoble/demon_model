@@ -1,50 +1,71 @@
-#include "Objects.hpp"
+#include "genotype.hpp"
 
-/////// DriverGenotype
-// Constructor
-DriverGenotype::DriverGenotype(int population, int parent, int driverIdentity, int numberOfDriverMutations,
-    int numberOfMigrationMutations, int numMeth, int numDemeth, bool immortal, float birthRate, float migrationRate, float originTime)
-    : population(population), parent(parent), driver_identity(driverIdentity),
-        number_of_driver_mutations(numberOfDriverMutations), number_of_migration_mutations(numberOfMigrationMutations),
-        num_meth(numMeth), num_demeth(numDemeth), immortal(immortal), birth_rate(birthRate), migration_rate(migrationRate), origin_time(originTime) {}
+/////// Constructor
+Genotype::Genotype(int parent, int identity,
+    int numBirthMut, int numMigMut, float birthRate, float migrationRate,
+    float muDriverBirth, float muDriverMig, bool immortal, float originTime)
+    : parent(parent), identity(identity),
+    numBirthMut(numBirthMut), numMigMut(numMigMut), birthRate(birthRate), migrationRate(migrationRate),
+    muDriverBirth(muDriverBirth), muDriverMig(muDriverMig), immortal(immortal), originTime(originTime) {}
 
-// Methods
-void DriverGenotype::increment(int increment) {
-    population += increment;
-    if (population == 0) {
-        immortal = false;
-    }
-}
+/////// Cell birh events
+// increment population
+// void Genotype::increment(int increment) {
+//     population += increment;
+//     if (population == 0) {
+//         immortal = false;
+//     }
+// }
+// // add cell to cell list
+// void Genotype::addCell(int cell) {
+//     cellList.push_back(cell);
+// }
+// // mutations
+// std::vector<int> Genotype::newMutations() {
+//     // draw the number of birth and migration drivers from Poisson distributions
+//     int newBirth = RandomNumberGenerator::getInstance().poissonDist(muDriverBirth);
+//     int newMig = RandomNumberGenerator::getInstance().poissonDist(muDriverMig);
 
-void DriverGenotype::set_birth_rate(const InputParameters& params, RandomNumberGenerator& rng) {
+//     // return the number of birth and migration drivers
+//     std::vector<int> newDrivers = {newBirth, newMig};
+//     return newDrivers;
+// }
+
+/////// Rates handling
+// birth rate
+void Genotype::setBirthRate(const InputParameters& params) {
     float advantage = params.s_driver_birth;
-    birth_rate = 1;
+    birthRate = 1;
 
     if (params.max_relative_birth_rate >= 0) 
-        for(int i = 0; i < number_of_driver_mutations; i++) {
-            birth_rate = birth_rate * (1 + advantage * (1 - birth_rate / params.max_relative_birth_rate) * rng.exp(1));
+        for(int i = 0; i < numBirthMut; i++) {
+            float rnd = RandomNumberGenerator::getInstance().expDist(1);
+            birthRate = birthRate * (1 + advantage * (1 - birthRate / params.max_relative_birth_rate) * rnd);
         }
     else
-        for(int i = 0; i < number_of_driver_mutations; i++) {
-            birth_rate = birth_rate * (1 + advantage * rng.exp(1));
+        for(int i = 0; i < numBirthMut; i++) {
+            float rnd = RandomNumberGenerator::getInstance().expDist(1);
+            birthRate = birthRate * (1 + advantage * rnd);
         }
     
-    if (birth_rate >= params.max_relative_birth_rate + 100) {
-        std::cout << "Birth rate exceeds death rate" << std::endl;
+    if (birthRate >= params.max_relative_birth_rate + 100) {
+        std::cout << "ERROR: Birth rate at carrying capacity exceeds death rate." << std::endl;
         exit(1);
     }
 }
 
-void DriverGenotype::set_migration_rate(const InputParameters& params, RandomNumberGenerator& rng) {
+void Genotype::setMigrationRate(const InputParameters& params) {
     float advantage = params.s_driver_migration;
-    migration_rate = params.init_migration_rate;
+    migrationRate = params.init_migration_rate;
 
     if (params.max_relative_migration_rate >= 0) 
-        for(int i = 0; i < number_of_migration_mutations; i++) {
-            migration_rate = migration_rate * (1 + advantage * (1 - migration_rate / (params.max_relative_migration_rate + params.init_migration_rate)) * rng.exp(1));
+        for(int i = 0; i < numMigMut; i++) {
+            float rnd = RandomNumberGenerator::getInstance().expDist(1);
+            migrationRate = migrationRate * (1 + advantage * (1 - migrationRate / (params.max_relative_migration_rate + params.init_migration_rate)) * rnd);
         }
     else
-        for(int i = 0; i < number_of_migration_mutations; i++) {
-            migration_rate = migration_rate * (1 + advantage * rng.exp(1));
+        for(int i = 0; i < numMigMut; i++) {
+            float rnd = RandomNumberGenerator::getInstance().expDist(1);
+            migrationRate = migrationRate * (1 + advantage * rnd);
         }
 }

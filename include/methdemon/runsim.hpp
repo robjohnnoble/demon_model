@@ -1,8 +1,8 @@
 #ifndef RUNSIM_HPP
 #define RUNSIM_HPP
 
-#include "Initialise.hpp"
-#include "Tumour.hpp"
+#include "initialise.hpp"
+#include "tumour.hpp"
 
 #include <string>
 #include <vector>
