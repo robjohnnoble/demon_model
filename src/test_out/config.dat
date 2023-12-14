@@ -1,47 +1,47 @@
 capacity
 {
-    log2_deme_carrying_capacity 13
+    log2_deme_carrying_capacity 10
 }
 dispersal
 {
-    init_migration_rate 0.00001
+    init_migration_rate 0.0001
     migration_rate_scales_with_K 1
 }
 mutation
 {
-    mu_driver_birth 0.00001
+    mu_driver_birth 0
     mu_driver_migration 0
 }
 fitness
 {
     normal_birth_rate 0
     baseline_death_rate 0
-    s_driver_birth 0.1
+    s_driver_birth 0
     s_driver_migration 0
     max_relative_birth_rate 10
     max_relative_migration_rate 10
 }
 methylation
 {
-    meth_rate 0.001
-    demeth_rate 0.001
+    meth_rate 0.0005
+    demeth_rate 0.0005
     fCpG_loci_per_cell 1000
     manual_array -1
 }
 fission_times
 {
-    time0 50
+    time0 0
     time1 100
     time2 120
-    time3 130
-    time4 140
-    time5 150
-    time6 160
+    time3 500
+    time4 520
+    time5 700
+    time6 720
 }
 stopping_conditions
 {
     max_time 86400
-    max_generations 2000000
+    max_generations 1000
 }
 initial_conditions
 {
@@ -57,5 +57,5 @@ output_indicators
 }
 seed
 {
-    seed 10
+    seed 69
 }

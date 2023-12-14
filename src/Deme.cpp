@@ -1,10 +1,7 @@
 #include "deme.hpp"
 
 /////// Constructor
-Deme::Deme(int K, std::string side, int identity, int population,
-    int fissions, float deathRate, float sumBirthRates, float sumMigRates)
-    : K(K), side(side), identity(identity), population(population), fissions(fissions),
-        deathRate(deathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates) {
+Deme::Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float sumBirthRates, float sumMigRates) : K(K), side(side), identity(identity), population(population), fissions(fissions), deathRate(deathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates) {
     avgMethArray.clear();
 }
 
@@ -18,10 +15,11 @@ void Deme::initialise(const InputParameters& params, const DerivedParameters& d_
 }
 
 /////// Deme property handling
-// increment or decrement population of the deme and update death rate
+// increment or decrement population of the deme and update all rates
 void Deme::increment(int increment, const InputParameters& params, std::string origin) {
     population += increment;
     setDeathRate(params);
+    calculateSumsOfRates();
 
     // check population sum
     int num_clones_in_deme = cellList.size();
@@ -48,15 +46,38 @@ void Deme::calculateAverageArray(int fcpgs) {
 }
 
 /////// Cell events
+// choose cell for event
+int Deme::chooseCell() {
+    std::vector<double> cumRates;
+    double r;
+
+    if (population == 1) {
+        return 0;
+    } else {
+        double rateSum = 0.0;
+        for (int i = 0; i < population; i++) {
+            rateSum += deathRate + cellList[i].getBirthRate() + cellList[i].getMigrationRate();
+            cumRates.push_back(rateSum);
+        }
+        double rnd = RandomNumberGenerator::getInstance().unitUnifDist();
+        r = rnd * cumRates.back();
+    }
+
+    if (population == 2) {
+        return r < cumRates[0] ? 0 : 1;
+    } else {
+        auto it = std::lower_bound(cumRates.begin(), cumRates.end(), r);
+        return std::distance(cumRates.begin(), it);
+    }
+}
 // cell division
-void Deme::cellDivision(int parentIndex, int* next_cell_id, const InputParameters& params, RandomNumberGenerator& rng) {
+void Deme::cellDivision(int parentIndex, int* nextCellID, int* nextGenotypeID, const InputParameters& params, RandomNumberGenerator& rng) {
     Cell& parent = cellList[parentIndex];
-    Cell daughter = Cell((*next_cell_id)++, parent.getGenotype(), parent.getDriverIndex(), identity, parent.getNumMeth(), parent.getNumDemeth(),
-        parent.getFCpGs(), parent.getMethArray());
+    Cell daughter = Cell((*nextCellID)++, parent.getGenotype(), identity, parent.getNumMeth(), parent.getNumDemeth(), parent.getFCpGs(), parent.getMethArray());
     parent.methylation(params);
     daughter.methylation(params);
-    parent.mutation();
-    daughter.mutation();
+    parent.mutation(nextGenotypeID, params);
+    daughter.mutation(nextGenotypeID, params);
     cellList.push_back(daughter);
 }
 // cell death
@@ -73,5 +94,14 @@ void Deme::setDeathRate(const InputParameters& params) {
     }
     else {
         deathRate = params.baseline_death_rate + 100;
+    }
+}
+// calculate all rates
+void Deme::calculateSumsOfRates() {
+    sumBirthRates = 0;
+    sumMigRates = 0;
+    for (int i = 0; i < population; i++) {
+        sumBirthRates += cellList[i].getBirthRate();
+        sumMigRates += cellList[i].getMigrationRate();
     }
 }
