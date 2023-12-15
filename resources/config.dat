@@ -1,6 +1,6 @@
 capacity
 {
-    log2_deme_carrying_capacity 10
+    log2_deme_carrying_capacity 14
 }
 dispersal
 {
@@ -23,25 +23,26 @@ fitness
 }
 methylation
 {
-    meth_rate 0.0005
-    demeth_rate 0.0005
+    meth_rate 0.005
+    demeth_rate 0.005
     fCpG_loci_per_cell 1000
     manual_array -1
 }
 fission_times
 {
-    time0 0
-    time1 100
-    time2 120
-    time3 500
-    time4 520
-    time5 700
-    time6 720
+    t0 0
+    tL1 2
+    tL2 6
+    tL3 14
+    tR1 4
+    tR2 8
+    tR3 12
 }
 stopping_conditions
 {
     max_time 86400
     max_generations 1000
+    max_fissions 20
 }
 initial_conditions
 {
@@ -51,9 +52,6 @@ output_indicators
 {
     write_clones_file 1
     write_demes_file 1
-    record_matrix 0
-    write_phylo 0
-    calculate_total_diversity 0
 }
 seed
 {

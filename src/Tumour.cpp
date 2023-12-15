@@ -104,7 +104,7 @@ void Tumour::event(const InputParameters& params) {
                 }
                 else if (chosenSide == "right") {
                     // Check if nextFissionR has reached the end of the array
-                    if (nextFissionR >= &fissionTimes.back()) {
+                    if (nextFissionR > &fissionTimes.back()) {
                         demes[chosenDeme].pseudoFission();
                     }
                     else {
