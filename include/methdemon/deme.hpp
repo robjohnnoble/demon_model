@@ -47,6 +47,7 @@ public:
     void calculateSumsOfRates();
     // Getters
     int getK() const { return K; }
+    std::string getSide() const { return side; }
     int getPopulation() const { return population; }
     int getIdentity() const { return identity; }
     float getDeathRate() const { return deathRate; }
@@ -55,6 +56,8 @@ public:
     float getSumOfRates() const { return sumBirthRates + sumMigRates + population * deathRate; }
     float getCellBirth(int chosenCell) const { return cellList[chosenCell].getBirthRate(); }
     float getCellMig(int chosenCell) const { return cellList[chosenCell].getMigrationRate(); }
+    int getFissions() const { return fissions; }
+    std::vector<float> getAverageArray() const { return avgMethArray; }
     // Setters
     void setSide(std::string side) { this->side = side; }
     void setDeathRate() { this->deathRate = population > K ? baseDeathRate + 100 : baseDeathRate; };

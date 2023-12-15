@@ -5,7 +5,6 @@
 #include "distributions.hpp"
 #include "deme.hpp"
 #include "genotype.hpp"
-#include "output.hpp"
 #include "macros.hpp"
 #include <set>
 #include <functional>
@@ -24,7 +23,8 @@ private:
     float gensElapsed = 0;
     float outputTimer = 0;
     std::vector<int> fissionTimes;
-    int nextFission = 0;    
+    int* nextFissionL = 0;    
+    int* nextFissionR = 0;
     // sums of rates
     double sumBirthRates = 0;
     double sumDeathRates = 0;
@@ -48,10 +48,12 @@ public:
     int getNextCellID() const { return nextCellID; }
     int getNextGenotypeID() const { return nextGenotypeID; }
     int getNumCells() const;
+    float fissionsPerDeme();
     int getNumDemes() const { return demes.size(); }
     int getNumGenotypes() const { return genotypes.size(); }
     float getGensElapsed() const { return gensElapsed; }
     float getOutputTimer() const { return outputTimer; }
+    Deme& getDeme(int index) { return demes[index]; }
 };
 
 #endif // TUMOUR_HPP

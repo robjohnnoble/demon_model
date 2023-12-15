@@ -15,15 +15,16 @@ Tumour::Tumour(const InputParameters& params,
     demes.back().initialise(firstGenotype, params, d_params);
 
     // fission times
-    fissionTimes.push_back(params.time0);
-    fissionTimes.push_back(params.time1);
-    fissionTimes.push_back(params.time2);
-    fissionTimes.push_back(params.time3);
-    fissionTimes.push_back(params.time4);
-    fissionTimes.push_back(params.time5);
-    fissionTimes.push_back(params.time6);
+    fissionTimes.push_back(params.t0);
+    fissionTimes.push_back(params.tL1);
+    fissionTimes.push_back(params.tL2);
+    fissionTimes.push_back(params.tL3);
+    fissionTimes.push_back(params.tR1);
+    fissionTimes.push_back(params.tR2);
+    fissionTimes.push_back(params.tR3);
 
-    nextFission = fissionTimes[0];
+    nextFissionL = &fissionTimes[0];
+    nextFissionR = &fissionTimes[4];
 }
 
 /////// Choose events based on rate sums
@@ -90,38 +91,84 @@ void Tumour::event(const InputParameters& params) {
     if (eventType == "birth") {
         demes[chosenDeme].cellDivision(chosenCell, &nextCellID, &nextGenotypeID, gensElapsed, params);
         float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
-        if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK() && rnd < demes[chosenDeme].getSumMigrationRates())
-            if (gensElapsed >= nextFission) {
-                if (nextFission == fissionTimes[0]) {
-                    nextFission = fissionTimes[1];
-                    demes[chosenDeme].demeFission(true);
+        if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK()) {
+            // Determine the side of the chosen deme
+            std::string chosenSide = demes[chosenDeme].getSide();
+            // Check if the fission condition is met
+            bool fissionCondition = fissionsPerDeme() >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
+            if (fissionCondition) {
+                if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
+                    nextFissionL = &fissionTimes[1];
+                    nextFissionR = &fissionTimes[4];
+                    demes.push_back(demes[chosenDeme].demeFission(true));
                 }
-                else {
-                    demes[chosenDeme].demeFission();
+                else if (chosenSide == "right") {
+                    // Check if nextFissionR has reached the end of the array
+                    if (nextFissionR >= &fissionTimes.back()) {
+                        demes[chosenDeme].pseudoFission();
+                    }
+                    else {
+                        demes.push_back(demes[chosenDeme].demeFission());
+                        nextFissionR++;
+                    }
                 }
-            }
-            else {
-                demes[chosenDeme].pseudoFission();
-            }
-    }
-    else if (eventType == "death") {
-        demes[chosenDeme].cellDeath(chosenCell);
-    }
-    else if (eventType == "fission") {
-        if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK())
-            if (gensElapsed >= nextFission) {
-                if (nextFission == fissionTimes[0]) {
-                    nextFission = fissionTimes[1];
-                    demes[chosenDeme].demeFission(true);
-                }
-                else {
-                    demes[chosenDeme].demeFission();
+                else if (chosenSide == "left") {
+                    // Check if nextFissionL has reached fissionTimes[4]
+                    if (nextFissionL >= &fissionTimes[4]) {
+                        demes[chosenDeme].pseudoFission();
+                    }
+                    else {
+                        demes.push_back(demes[chosenDeme].demeFission());
+                        nextFissionL++;
+                    }
                 }
             }
             else {
                 demes[chosenDeme].pseudoFission();
             }
         }
+    }
+    else if (eventType == "death") {
+        demes[chosenDeme].cellDeath(chosenCell);
+    }
+    else if (eventType == "fission") {
+       if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK()) {
+            // Determine the side of the chosen deme
+            std::string chosenSide = demes[chosenDeme].getSide();
+            // Check if the fission condition is met
+            bool fissionCondition = fissionsPerDeme() >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
+            if (fissionCondition) {
+                if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
+                    nextFissionL = &fissionTimes[1];
+                    nextFissionR = &fissionTimes[4];
+                    demes.push_back(demes[chosenDeme].demeFission(true));
+                }
+                else if (chosenSide == "right") {
+                    // Check if nextFissionR has reached the end of the array
+                    if (nextFissionR > &fissionTimes.back()) {
+                        demes[chosenDeme].pseudoFission();
+                    }
+                    else {
+                        demes.push_back(demes[chosenDeme].demeFission());
+                        nextFissionR++;
+                    }
+                }
+                else if (chosenSide == "left") {
+                    // Check if nextFissionL has reached fissionTimes[4]
+                    if (nextFissionL >= &fissionTimes[4]) {
+                        demes[chosenDeme].pseudoFission();
+                    }
+                    else {
+                        demes.push_back(demes[chosenDeme].demeFission());
+                        nextFissionL++;
+                    }
+                }
+            }
+            else {
+                demes[chosenDeme].pseudoFission();
+            }
+        } 
+    }
     else {
         std::cout << "Error: invalid event type" << std::endl;
     }
@@ -143,5 +190,14 @@ int Tumour::getNumCells() const {
     for (int i = 0; i < demes.size(); i++) {
         res += demes[i].getPopulation();
     }
+    return res;
+}
+// get average number of fissions per deme
+float Tumour::fissionsPerDeme() {
+    float res = 0;
+    for (int i = 0; i < demes.size(); i++) {
+        res += demes[i].getFissions();
+    }
+    res /= demes.size();
     return res;
 }

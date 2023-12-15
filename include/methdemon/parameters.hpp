@@ -9,14 +9,14 @@ struct InputParameters {
     float init_migration_rate;
     int migration_rate_scales_with_K;
 
-    // fission times
-    int time0;
-    int time1;
-    int time2;
-    int time3;
-    int time4;
-    int time5;
-    int time6;
+    // fission times (in numbers of fissions)
+    int t0;
+    int tL1;
+    int tL2;
+    int tL3;
+    int tR1;
+    int tR2;
+    int tR3;
 
     // fitness
     float normal_birth_rate;
@@ -42,17 +42,14 @@ struct InputParameters {
     // stopping conditions
     int max_time;
     int max_generations;
+    int max_fissions;
 
     // initial conditions
     int init_pop;
-    int matrix_max;
     
     // output indicators
-    int record_matrix;
     int write_demes_file;
     int write_clones_file;
-    int write_phylo;
-    int calculate_total_diversity;
 };
 
 struct DerivedParameters {
