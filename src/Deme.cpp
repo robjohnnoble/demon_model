@@ -1,24 +1,25 @@
 #include "deme.hpp"
 
 /////// Constructor
-Deme::Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float sumBirthRates, float sumMigRates) : K(K), side(side), identity(identity), population(population), fissions(fissions), deathRate(deathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates) {
+Deme::Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float baseDeathRate, float sumBirthRates, float sumMigRates) : K(K), side(side), identity(identity), population(population), fissions(fissions), deathRate(deathRate), baseDeathRate(baseDeathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates) {
     avgMethArray.clear();
+    cellList.clear();
 }
 
 /////// Initialise first deme
-void Deme::initialise(const InputParameters& params, const DerivedParameters& d_params) {
+void Deme::initialise(std::shared_ptr<Genotype> firstGenotype, const InputParameters& params, const DerivedParameters& d_params) {
     // initialise first cell
     std::vector<int> tmpArray(d_params.fcpgs, 0);
-    std::shared_ptr<Genotype> firstGenotype = std::make_shared<Genotype>(0, 0, 0, 0, 1, params.init_migration_rate, params.mu_driver_birth, params.mu_driver_migration, true, 0);
-    Cell firstCell = Cell(0, firstGenotype, identity, 0, 0, d_params.fcpgs, tmpArray);
+    Cell firstCell = Cell(0, firstGenotype, identity, 0, 0, d_params.fcpgs, tmpArray, params.meth_rate, params.demeth_rate);
     firstCell.initialArray(params.manual_array);
+    cellList.push_back(std::move(firstCell));
 }
 
 /////// Deme property handling
 // increment or decrement population of the deme and update all rates
-void Deme::increment(int increment, const InputParameters& params, std::string origin) {
+void Deme::increment(int increment) {
     population += increment;
-    setDeathRate(params);
+    setDeathRate();
     calculateSumsOfRates();
 
     // check population sum
@@ -27,13 +28,14 @@ void Deme::increment(int increment, const InputParameters& params, std::string o
         std::cout << "ERROR: Population does not equal number of clones in deme." << std::endl
         << "deme identity: " << identity 
         << "; population: " << population << "; num_clones_in_deme: " << num_clones_in_deme << std::endl
-        << "; increment: " << increment 
-        << "; call origin: " << origin << std::endl;
+        << "; increment: " << increment << std::endl;
+        // << "; call origin: " << origin << std::endl;
         exit(1);
     }
 }
 // calculate the average methylation array of the deme
-void Deme::calculateAverageArray(int fcpgs) {
+void Deme::calculateAverageArray() {
+    int fcpgs = cellList[0].getFCpGs();
     avgMethArray = std::vector<float>(fcpgs, 0);
     for (int i = 0; i < population; i++) {
         for (int j = 0; j < fcpgs; j++) {
@@ -43,6 +45,68 @@ void Deme::calculateAverageArray(int fcpgs) {
     for (int i = 0; i < fcpgs; i++) {
         avgMethArray[i] /= population;
     }
+}
+
+/////// Deme events
+// deme fission - returns new deme
+Deme Deme::demeFission(bool firstFission) {
+    fissions++;
+    // initialise new deme
+    Deme newDeme = Deme(K, side, identity + 1, 0, fissions, 0, baseDeathRate, 0, 0);
+    if (firstFission) newDeme.setSide("right");
+    moveCells(newDeme);
+    // update origin deme
+    setDeathRate();
+    calculateSumsOfRates();
+    calculateAverageArray();
+    // update new deme
+    newDeme.setDeathRate();
+    newDeme.calculateSumsOfRates();
+    newDeme.calculateAverageArray();
+    return newDeme;
+}
+// pseudo fission - kill half the population randomly
+void Deme::pseudoFission() {
+    fissions++;
+    int numCellsToKill = RandomNumberGenerator::getInstance().stochasticRound(population / 2.0);
+    // get set of indices of cells to kill
+    std::vector<int> indices;
+    for (int i = 0; i < population; i++) {
+        indices.push_back(i);
+    }
+    // shuffle indices
+    std::shuffle(indices.begin(), indices.end(), RandomNumberGenerator::getInstance().getEngine());
+    // remove the first `numCellsToKill` indices in descending order
+    std::sort(indices.begin(), indices.begin() + numCellsToKill, std::greater<int>());
+    for (int i = 0; i < numCellsToKill; i++) {
+        cellDeath(indices[i]);
+    }
+    setDeathRate();
+    calculateSumsOfRates();
+}
+// move cells to target deme
+void Deme::moveCells(Deme& targetDeme) {
+    int numCellsToMove = RandomNumberGenerator::getInstance().stochasticRound(population / 2.0);
+    // get set of indices of cells to move
+    std::vector<int> indices;
+    for (int i = 0; i < population; i++) {
+        indices.push_back(i);
+    }
+    // shuffle indices
+    std::shuffle(indices.begin(), indices.end(), RandomNumberGenerator::getInstance().getEngine());
+    // move the first `numCellsToMove` indices in descending order
+    std::sort(indices.begin(), indices.begin() + numCellsToMove, std::greater<int>());
+    for (int i = 0; i < numCellsToMove; i++) {
+        int index = indices[i];
+        targetDeme.cellList.push_back(std::move(cellList[index]));
+        targetDeme.cellList.back().setDeme(targetDeme.getIdentity());
+        if(index != population - 1) {
+            std::swap(cellList[index], cellList.back());
+        }
+        cellList.pop_back();
+    }
+    increment(-numCellsToMove);
+    targetDeme.increment(numCellsToMove);
 }
 
 /////// Cell events
@@ -71,31 +135,24 @@ int Deme::chooseCell() {
     }
 }
 // cell division
-void Deme::cellDivision(int parentIndex, int* nextCellID, int* nextGenotypeID, const InputParameters& params, RandomNumberGenerator& rng) {
+void Deme::cellDivision(int parentIndex, int* nextCellID, int* nextGenotypeID, float gensElapsed, const InputParameters& params) {
     Cell& parent = cellList[parentIndex];
-    Cell daughter = Cell((*nextCellID)++, parent.getGenotype(), identity, parent.getNumMeth(), parent.getNumDemeth(), parent.getFCpGs(), parent.getMethArray());
-    parent.methylation(params);
-    daughter.methylation(params);
-    parent.mutation(nextGenotypeID, params);
-    daughter.mutation(nextGenotypeID, params);
-    cellList.push_back(daughter);
+    Cell daughter = Cell((*nextCellID)++, parent.getGenotype(), identity, parent.getNumMeth(), parent.getNumDemeth(), parent.getFCpGs(), parent.getMethArray(), parent.getMethRate(), parent.getDemethRate());
+    parent.methylation();
+    daughter.methylation();
+    parent.mutation(nextGenotypeID, gensElapsed, params);
+    daughter.mutation(nextGenotypeID, gensElapsed, params);
+    cellList.push_back(std::move(daughter));
+    increment(1);
 }
 // cell death
 void Deme::cellDeath(int cellIndex) {
     std::swap(cellList[cellIndex], cellList.back());
     cellList.pop_back();
+    increment(-1);
 }
 
 /////// Rates handling
-// set death rate per cell based on current population
-void Deme::setDeathRate(const InputParameters& params) {
-    if (population <= K) {
-        deathRate = params.baseline_death_rate;
-    }
-    else {
-        deathRate = params.baseline_death_rate + 100;
-    }
-}
 // calculate all rates
 void Deme::calculateSumsOfRates() {
     sumBirthRates = 0;

@@ -1,4 +1,4 @@
-#include "Output.hpp"
+#include "output.hpp"
 
 void print_to_screen(const InputParameters& params, const DerivedParameters& d_params, const EventCounter& event_counter) {
 
@@ -9,12 +9,12 @@ void print_to_screen(const InputParameters& params, const DerivedParameters& d_p
     std::cout << "Mut effects: " << params.s_driver_birth << " (birth), " << params.s_driver_migration << " (mig)" << std::endl;
     std::cout << "----------------------------------------------------------------" << std::endl;
 
-    std::cout << gens_elapsed << " generations, " << iterations << " iterations" << std::endl;
-    std::cout << num_cells() << " cells, " << num_clones() << " clones, " << num_driver_genotypes() << " driver genotypes, " << std::endl;
-    //std::cout << num_matrix_cols << " matrix columns; " << next_genotype_id << " genotypes ever created" << std::endl;
-    std::cout << num_demes() << " demes " <</* max_layer_needed_array[num_demes] + 1 << " bintree layers" <<*/ std::endl;
-    std::cout << std::endl;
-    std::cout << "----------------------------------------------------------------" << std::endl;
+    // std::cout << gens_elapsed << " generations, " << iterations << " iterations" << std::endl;
+    // std::cout << num_cells() << " cells, " << num_clones() << " clones, " << num_driver_genotypes() << " driver genotypes, " << std::endl;
+    // //std::cout << num_matrix_cols << " matrix columns; " << next_genotype_id << " genotypes ever created" << std::endl;
+    // std::cout << num_demes() << " demes " <</* max_layer_needed_array[num_demes] + 1 << " bintree layers" <<*/ std::endl;
+    // std::cout << std::endl;
+    // std::cout << "----------------------------------------------------------------" << std::endl;
 
     /*
     std::cout << "Mean number of methylations, demethylations, drivers = " << mean_num_meth << ", " << mean_num_demeth << ", " << mean_num_drivers << std::endl;

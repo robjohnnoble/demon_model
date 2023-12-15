@@ -1,7 +1,7 @@
-#include "Input.hpp"
+#include "input.hpp"
 
 // get input and path from terminal
-std::string get_input_path(int argc, char *argv[]) {
+std::string getInputPath(int argc, char *argv[]) {
     if (argc < 3) {
         std::cerr << "Missing argument providing path to the config file and/or the config file name." << std::endl;
         exit(0);
@@ -16,7 +16,7 @@ std::string get_input_path(int argc, char *argv[]) {
 }
 
 // read parameters from config file
-InputParameters read_parameters(const boost::property_tree::ptree& pt, const std::string& config_file_path) {
+InputParameters readParameters(const boost::property_tree::ptree& pt, const std::string& config_file_path) {
     InputParameters params;
 
     params.log2_deme_carrying_capacity = pt.get<int>("capacity.log2_deme_carrying_capacity");

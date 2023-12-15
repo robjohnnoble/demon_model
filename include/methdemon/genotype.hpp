@@ -20,22 +20,22 @@ private:
     // Rates
     float birthRate; // birth rate of the genotype
     float migrationRate; // migration rate of the genotype
-    bool immortal; // indicator whether genotype record can be overwritten
-    float muDriverBirth; // birth driver mutation rate
-    float muDriverMig; // migration driver mutation rate
+    // float baseMigRate; // base migration rate
+    const float muDriverBirth; // birth driver mutation rate
+    const float muDriverMig; // migration driver mutation rate
+    const float inputMigRate; // input migration rate
+    const float maxRelBirth; // maximum relative birth rate
+    const float maxRelMig; // maximum relative migration rate
+    const float sDriverBirth; // advantage of birth driver mutations
+    const float sDriverMig; // advantage of migration driver mutations
     // Time
     float originTime; // generation in which the genotype was created
 public:
     // Constructor
-    Genotype(int parent, int identity, int numBirthMut, int numMigMut, float birthRate, float migrationRate, float muDriverBirth, float muDriverMig, bool immortal, float originTime);
+    Genotype(int parent, int identity, int numBirthMut, int numMigMut, float birthRate, float migrationRate, float originTime, const InputParameters& params);
     // Cell birth events
-    void increment(int increment);
-    void addCell(int cellIdentity);
     std::vector<int> newMutations();
     void removeCell(int cellIdentity);
-    // Rates handling
-    void setBirthRate(const InputParameters& params);
-    void setMigrationRate(const InputParameters& params);
     // Getters
     // int getPopulation() const { return population; }
     int getParent() const { return parent; }
@@ -47,8 +47,11 @@ public:
     float getMigrationRate() const { return migrationRate; }
     float getMuDriverBirth() const { return muDriverBirth; }
     float getMuDriverMig() const { return muDriverMig; }
-    bool getImmortal() const { return immortal; }
     float getOriginTime() const { return originTime; }
+    // Setters
+    void setBirthRate();
+    void setMigrationRate();
+    // void setBaseMigRate();
 };
 
 #endif // GENOTYPE_HPP
