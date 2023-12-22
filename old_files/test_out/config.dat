@@ -1,0 +1,61 @@
+capacity
+{
+    log2_deme_carrying_capacity 10
+}
+dispersal
+{
+    init_migration_rate 0.0001
+    migration_rate_scales_with_K 1
+}
+mutation
+{
+    mu_driver_birth 0
+    mu_driver_migration 0
+}
+fitness
+{
+    normal_birth_rate 0
+    baseline_death_rate 0
+    s_driver_birth 0
+    s_driver_migration 0
+    max_relative_birth_rate 10
+    max_relative_migration_rate 10
+}
+methylation
+{
+    meth_rate 0.0005
+    demeth_rate 0.0005
+    fCpG_loci_per_cell 1000
+    manual_array -1
+}
+fission_times
+{
+    time0 0
+    time1 100
+    time2 120
+    time3 500
+    time4 520
+    time5 700
+    time6 720
+}
+stopping_conditions
+{
+    max_time 86400
+    max_generations 1000
+}
+initial_conditions
+{
+    init_pop 1
+}
+output_indicators
+{
+    write_clones_file 1
+    write_demes_file 1
+    record_matrix 0
+    write_phylo 0
+    calculate_total_diversity 0
+}
+seed
+{
+    seed 69
+}
