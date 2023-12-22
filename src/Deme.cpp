@@ -13,6 +13,7 @@ void Deme::initialise(std::shared_ptr<Genotype> firstGenotype, const InputParame
     Cell firstCell = Cell(0, firstGenotype, identity, 0, 0, d_params.fcpgs, tmpArray, params.meth_rate, params.demeth_rate);
     firstCell.initialArray(params.manual_array);
     cellList.push_back(std::move(firstCell));
+    calculateAverageArray();
 }
 
 /////// Deme property handling
@@ -36,14 +37,14 @@ void Deme::increment(int increment) {
 // calculate the average methylation array of the deme
 void Deme::calculateAverageArray() {
     int fcpgs = cellList[0].getFCpGs();
-    avgMethArray = std::vector<float>(fcpgs, 0);
+    avgMethArray = std::vector<float>(fcpgs / 2, 0);
     for (int i = 0; i < population; i++) {
-        for (int j = 0; j < fcpgs; j++) {
-            avgMethArray[j] += cellList[i].getFCpGSite(j);
+        for (int j = 0; j < fcpgs / 2; j++) {
+            avgMethArray[j] += static_cast<float>(cellList[i].getFCpGSite(j) + cellList[i].getFCpGSite(j + fcpgs / 2)) / 2.0;
         }
     }
-    for (int i = 0; i < fcpgs; i++) {
-        avgMethArray[i] /= population;
+    for (int i = 0; i < fcpgs / 2; i++) {
+        avgMethArray[i] /= static_cast<float>(population);
     }
 }
 

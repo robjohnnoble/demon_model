@@ -4,7 +4,7 @@ capacity
 }
 dispersal
 {
-    init_migration_rate 0.0001
+    init_migration_rate 0.00001
     migration_rate_scales_with_K 1
 }
 mutation
@@ -23,26 +23,26 @@ fitness
 }
 methylation
 {
-    meth_rate 0.005
-    demeth_rate 0.005
+    meth_rate 0.01
+    demeth_rate 0.01
     fCpG_loci_per_cell 1000
     manual_array -1
 }
 fission_times
 {
     t0 0
-    tL1 2
-    tL2 6
-    tL3 14
-    tR1 4
-    tR2 8
-    tR3 12
+    tL1 7
+    tL2 13
+    tL3 20
+    tR1 7
+    tR2 13
+    tR3 20
 }
 stopping_conditions
 {
     max_time 86400
-    max_generations 1000
-    max_fissions 20
+    max_generations 100
+    max_fissions 30
 }
 initial_conditions
 {

@@ -51,7 +51,7 @@ void Cell::initialArray(const float manualArray) {
     if(manualArray == -1) {
         for (int i = 0; i < fcpgs; i++) {
             double rnd = RandomNumberGenerator::getInstance().unitUnifDist();
-            rnd > 0.5 ? methArray[i] = 1 : methArray [i] = 0;
+            rnd > 0.5 ? methArray[i] = 1 : methArray[i] = 0;
         }
     }
     else {
@@ -60,9 +60,13 @@ void Cell::initialArray(const float manualArray) {
         }
         for (int i = std::ceil(fcpgs * manualArray); i < fcpgs; i++) {
             double rnd = RandomNumberGenerator::getInstance().unitUnifDist();
-            rnd > 0.5 ? methArray[i] = 1 : methArray [i] = 0;
+            rnd > 0.5 ? methArray[i] = 1 : methArray[i] = 0;
         }
     }
+    for (int i = 0; i < fcpgs; i++) {
+        std::cout << methArray[i];
+    }
+    std::cout << std::endl;
 }
 // methylation event
 void Cell::methylation() {
@@ -75,6 +79,7 @@ void Cell::methylation() {
         numMeth += condition1;
         numDemeth += condition2;
     }
+    // std::cout << "methylations: " << numMeth << "; demethylations: " << numDemeth << std::endl;
 }
 
 /////// Mutations
