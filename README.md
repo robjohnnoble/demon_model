@@ -16,8 +16,6 @@ Then modify the `Makefile` to include the path to your copy of `boost` and run
 make all
 ```
 
-## Running a simulation
-
 Create a directory where you would like your outputs stored and make a copy of the `config.dat` file modified with your required parameters. From the repo parent directory run
 ```
 bin/methdemon <output_dir_path> <config_file_name>
