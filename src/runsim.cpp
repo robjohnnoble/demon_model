@@ -37,22 +37,27 @@ void runSim(const std::string& input_and_output_path,
         tumour.event(params);
         if (wIndicator && tumour.getNumCells() == 2) {
             std::cout << "First cell division written." << std::endl;
-            finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
+            finalDemes.writeDemesFile(tumour);
             wIndicator = false;
         }
         if (wIndicator2 && tumour.getNumDemes() == 2) {
             std::cout << "2 demes." << std::endl;
-            finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
+            finalDemes.writeDemesFile(tumour);
             wIndicator2 = false;
         }
         if (wIndicator4 && tumour.getNumDemes() == 4) {
             std::cout << "4 demes." << std::endl;
-            finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
+            finalDemes.writeDemesFile(tumour);
             wIndicator4 = false;
         }
-        // if (tumour.getNumDemes() == 5) {
-        //     break;
-        // }
+        
+        // update time
+        iterations++;
+        gensAdded = calculateTime(tumour);
+        tumour.setGensElapsed(gensAdded);
+        outputTimer += gensAdded;
+
+        // write to stdout every 5 generations
         if(outputTimer >= 5) {
             int numGenotypes = tumour.getNumGenotypes();
             int numDemes = tumour.getNumDemes();
@@ -64,11 +69,6 @@ void runSim(const std::string& input_and_output_path,
             std::cout << tumour.getNextCellID() << " cells ever created; " << tumour.getNextGenotypeID() << " genotypes ever created." << std::endl;
             outputTimer = 0;
         }
-        // update time
-        iterations++;
-        gensAdded = calculateTime(tumour);
-        tumour.setGensElapsed(gensAdded);
-        outputTimer += gensAdded;
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -78,5 +78,5 @@ void runSim(const std::string& input_and_output_path,
     << tumour.getGensElapsed() << " generations; "
     << tumour.fissionsPerDeme() << " mean fissions per deme." << std::endl;
     std::cout << "Running time: " << elapsed.count() << " seconds." << std::endl;
-    finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
+    finalDemes.writeDemesFile(tumour);
 }
