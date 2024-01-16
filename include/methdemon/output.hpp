@@ -14,7 +14,8 @@ public:
     FileOutput(const std::string& path) { file.open(path, std::ofstream::out); }
     ~FileOutput() { file.close(); }
     // Write to file
-    void write(Tumour& tumour);
+    void writeDemesFile(Tumour& tumour, float gensElapsed);
+    void writeDemesHeader();
 };
 
 #endif // OUTPUT_HPP

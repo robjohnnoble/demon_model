@@ -22,13 +22,16 @@ private:
     // temporal variables
     float gensElapsed = 0;
     float outputTimer = 0;
-    std::vector<int> fissionTimes;
-    int* nextFissionL = 0;    
-    int* nextFissionR = 0;
+    std::vector<float> fissionTimes;
+    float* nextFissionL = 0;    
+    float* nextFissionR = 0;
+    int maxGens = 0;
     // sums of rates
-    double sumBirthRates = 0;
-    double sumDeathRates = 0;
-    double sumMigRates = 0;
+    // double sumBirthRates = 0;
+    // double sumDeathRates = 0;
+    // double sumMigRates = 0;
+    // misc
+    int fissionConfig = 0;
 public:
     // Constructor
     Tumour(const InputParameters& params, const DerivedParameters& d_params);
@@ -54,6 +57,8 @@ public:
     float getGensElapsed() const { return gensElapsed; }
     float getOutputTimer() const { return outputTimer; }
     Deme& getDeme(int index) { return demes[index]; }
+    // Setters
+    void setGensElapsed(float gensAdded = 0) { gensElapsed += gensAdded; }
 };
 
 #endif // TUMOUR_HPP

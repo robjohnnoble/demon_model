@@ -63,10 +63,10 @@ void Cell::initialArray(const float manualArray) {
             rnd > 0.5 ? methArray[i] = 1 : methArray[i] = 0;
         }
     }
-    for (int i = 0; i < fcpgs; i++) {
-        std::cout << methArray[i];
-    }
-    std::cout << std::endl;
+    // for (int i = 0; i < fcpgs; i++) {
+    //     std::cout << methArray[i];
+    // }
+    // std::cout << std::endl;
 }
 // methylation event
 void Cell::methylation() {

@@ -25,6 +25,11 @@ Tumour::Tumour(const InputParameters& params,
 
     nextFissionL = &fissionTimes[0];
     nextFissionR = &fissionTimes[4];
+
+    maxGens = params.max_generations;
+
+    // fission config
+    fissionConfig = params.fission_config;
 }
 
 /////// Choose events based on rate sums
@@ -90,12 +95,13 @@ void Tumour::event(const InputParameters& params) {
 
     if (eventType == "birth") {
         demes[chosenDeme].cellDivision(chosenCell, &nextCellID, &nextGenotypeID, gensElapsed, params);
-        float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
-        if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK()) {
+        // float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
+        if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK() &&
+            fissionConfig == 1) {
             // Determine the side of the chosen deme
             std::string chosenSide = demes[chosenDeme].getSide();
             // Check if the fission condition is met
-            bool fissionCondition = fissionsPerDeme() >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
+            bool fissionCondition = gensElapsed / static_cast<float>(maxGens) >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
             if (fissionCondition) {
                 if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
                     nextFissionL = &fissionTimes[1];
@@ -136,7 +142,13 @@ void Tumour::event(const InputParameters& params) {
             // Determine the side of the chosen deme
             std::string chosenSide = demes[chosenDeme].getSide();
             // Check if the fission condition is met
-            bool fissionCondition = fissionsPerDeme() >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
+            bool fissionCondition = gensElapsed / static_cast<float>(maxGens) >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
+            // std::cout << "gensElapsed: " << gensElapsed << std::endl
+            //     << "maxGens: " << maxGens << std::endl
+            //     << "division: " << gensElapsed / static_cast<float>(maxGens) << std::endl
+            //     << "fissionCondition: " << fissionCondition << std::endl
+            //     << "next fission side: " << chosenSide << std::endl
+            //     << "next fission time: " << (chosenSide == "right" ? *nextFissionR : *nextFissionL) << std::endl;
             if (fissionCondition) {
                 if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
                     nextFissionL = &fissionTimes[1];
