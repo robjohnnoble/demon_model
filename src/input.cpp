@@ -24,13 +24,13 @@ InputParameters readParameters(const boost::property_tree::ptree& pt, const std:
     params.init_migration_rate = pt.get<float>("dispersal.init_migration_rate");
     params.migration_rate_scales_with_K = pt.get<int>("dispersal.migration_rate_scales_with_K");
 
-    params.t0 = pt.get<int>("fission_times.t0");
-    params.tL1 = pt.get<int>("fission_times.tL1");
-    params.tL2 = pt.get<int>("fission_times.tL2");
-    params.tL3 = pt.get<int>("fission_times.tL3");
-    params.tR1 = pt.get<int>("fission_times.tR1");
-    params.tR2 = pt.get<int>("fission_times.tR2");
-    params.tR3 = pt.get<int>("fission_times.tR3");
+    params.t0 = pt.get<float>("fission_times.t0");
+    params.tL1 = pt.get<float>("fission_times.tL1");
+    params.tL2 = pt.get<float>("fission_times.tL2");
+    params.tL3 = pt.get<float>("fission_times.tL3");
+    params.tR1 = pt.get<float>("fission_times.tR1");
+    params.tR2 = pt.get<float>("fission_times.tR2");
+    params.tR3 = pt.get<float>("fission_times.tR3");
 
     params.normal_birth_rate = pt.get<float>("fitness.normal_birth_rate");
     params.baseline_death_rate = pt.get<float>("fitness.baseline_death_rate");
@@ -54,6 +54,7 @@ InputParameters readParameters(const boost::property_tree::ptree& pt, const std:
     params.max_fissions = pt.get<int>("stopping_conditions.max_fissions");
 
     params.init_pop = pt.get<int>("initial_conditions.init_pop");
+    params.fission_config = pt.get<int>("initial_conditions.fission_config");
 
     params.write_demes_file = pt.get<int>("output_indicators.write_demes_file");
     params.write_clones_file = pt.get<int>("output_indicators.write_clones_file");

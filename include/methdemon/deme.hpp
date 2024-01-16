@@ -60,7 +60,7 @@ public:
     std::vector<float> getAverageArray() const { return avgMethArray; }
     // Setters
     void setSide(std::string side) { this->side = side; }
-    void setDeathRate() { this->deathRate = population > K ? baseDeathRate + 100 : baseDeathRate; };
+    void setDeathRate() { this->deathRate = population > K ? baseDeathRate + 10 : baseDeathRate; };
 };
 
 #endif // DEME_HPP

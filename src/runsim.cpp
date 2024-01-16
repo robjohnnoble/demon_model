@@ -12,11 +12,12 @@ void runSim(const std::string& input_and_output_path,
     const std::string& config_file_with_path, const InputParameters& params) {
     int iterations;
     float outputTimer = 0;
-    float gensElapsed = 0, gensAdded; // time tracking
+    float gensAdded; // time tracking
     // derive derived parameters
     DerivedParameters d_params = deriveParameters(params);
     // initialise output files
     FileOutput finalDemes(input_and_output_path + "final_demes.txt");
+    finalDemes.writeDemesHeader();
     // initialise tumour
     Tumour tumour(params, d_params);
     // initialise event counter
@@ -24,19 +25,39 @@ void runSim(const std::string& input_and_output_path,
     std::cout << "Initialised simulation." << std::endl;
     // start timer
     auto start = std::chrono::high_resolution_clock::now();
+    bool wIndicator = true;
+    bool wIndicator2 = true;
+    bool wIndicator4 = true;
     // sort out column headers in output files
-    while(gensElapsed < params.max_generations &&
-        tumour.fissionsPerDeme() < params.max_fissions) {
+    while(tumour.getGensElapsed() < params.max_generations) {
+        //tumour.fissionsPerDeme() < params.max_fissions) {
         // update all rate sums
         // tumour.calculate_all_rates(params, d_params);
         // choose deme, cell, event
         tumour.event(params);
-        // perform event
+        if (wIndicator && tumour.getNumCells() == 2) {
+            std::cout << "First cell division written." << std::endl;
+            finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
+            wIndicator = false;
+        }
+        if (wIndicator2 && tumour.getNumDemes() == 2) {
+            std::cout << "2 demes." << std::endl;
+            finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
+            wIndicator2 = false;
+        }
+        if (wIndicator4 && tumour.getNumDemes() == 4) {
+            std::cout << "4 demes." << std::endl;
+            finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
+            wIndicator4 = false;
+        }
+        // if (tumour.getNumDemes() == 5) {
+        //     break;
+        // }
         if(outputTimer >= 5) {
             int numGenotypes = tumour.getNumGenotypes();
             int numDemes = tumour.getNumDemes();
             int numCells = tumour.getNumCells();
-            std::cout << "Generations elapsed: " << gensElapsed << std::endl;
+            std::cout << "Generations elapsed: " << tumour.getGensElapsed() << std::endl;
             std::cout << "Number of cells: " << numCells << std::endl;
             std::cout << "Number of driver genotypes: " << numGenotypes << std::endl;
             std::cout << "Number of demes: " << numDemes << std::endl;
@@ -46,7 +67,7 @@ void runSim(const std::string& input_and_output_path,
         // update time
         iterations++;
         gensAdded = calculateTime(tumour);
-        gensElapsed += gensAdded;
+        tumour.setGensElapsed(gensAdded);
         outputTimer += gensAdded;
     }
 
@@ -54,7 +75,8 @@ void runSim(const std::string& input_and_output_path,
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "End of simulation." << std::endl
     << tumour.getNumDemes() << " demes; " << tumour.getNumCells() << " cells; " 
+    << tumour.getGensElapsed() << " generations; "
     << tumour.fissionsPerDeme() << " mean fissions per deme." << std::endl;
     std::cout << "Running time: " << elapsed.count() << " seconds." << std::endl;
-    finalDemes.write(tumour);
+    finalDemes.writeDemesFile(tumour, tumour.getGensElapsed());
 }

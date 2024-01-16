@@ -10,13 +10,13 @@ struct InputParameters {
     int migration_rate_scales_with_K;
 
     // fission times (in numbers of fissions)
-    int t0;
-    int tL1;
-    int tL2;
-    int tL3;
-    int tR1;
-    int tR2;
-    int tR3;
+    float t0;
+    float tL1;
+    float tL2;
+    float tL3;
+    float tR1;
+    float tR2;
+    float tR3;
 
     // fitness
     float normal_birth_rate;
@@ -46,6 +46,7 @@ struct InputParameters {
 
     // initial conditions
     int init_pop;
+    int fission_config;
     
     // output indicators
     int write_demes_file;
