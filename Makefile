@@ -1,7 +1,7 @@
 # Compiler settings for debugging
 CXX = g++
-CXXFLAGS = -Wall -g -O0 -std=c++11 -I include/methdemon -I /opt/homebrew/Cellar/boost/1.82.0_1/include/
-LDFLAGS = 
+CXXFLAGS = -Wall -g -O0 -std=c++11 -I include/methdemon -I /opt/homebrew/Cellar/boost/1.84.0/include/
+LDFLAGS =
 
 # Directories
 SRCDIR = src
