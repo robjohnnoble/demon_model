@@ -3,7 +3,7 @@ MethDemon1D (fluctuating **meth**ylation clock **dem**e-based **on**cology model
 
 ## Prerequisites
 
-The program is written in C++; apart from standard libraries, it requires the Boost Property Tree C++ library.
+The program is written in C++; apart from standard libraries, it requires the Boost C++ library.
 
 ## Installing and compiling
 
@@ -19,4 +19,9 @@ make all
 Create a directory where you would like your outputs stored and make a copy of the `config.dat` file modified with your required parameters. From the repo parent directory run
 ```
 bin/methdemon <output_dir_path> <config_file_name>
+```
+
+To clear logfiles and binaries run
+```
+make clean
 ```
