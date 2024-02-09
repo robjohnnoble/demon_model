@@ -10,7 +10,7 @@ float calculateTime(Tumour& tumour) {
 
 void runSim(const std::string& input_and_output_path,
     const std::string& config_file_with_path, const InputParameters& params) {
-    int iterations;
+    int iterations = 0;
     float outputTimer = 0;
     float gensAdded; // time tracking
     // derive derived parameters
@@ -20,8 +20,8 @@ void runSim(const std::string& input_and_output_path,
     finalDemes.writeDemesHeader();
     // initialise tumour
     Tumour tumour(params, d_params);
-    // initialise event counter
-    EventCounter event_counter;
+    // NOTE: Implement event counter eventually (not that important tbh)
+    //EventCounter event_counter;
     std::cout << "Initialised simulation." << std::endl;
     // start timer
     auto start = std::chrono::high_resolution_clock::now();
@@ -50,7 +50,7 @@ void runSim(const std::string& input_and_output_path,
             finalDemes.writeDemesFile(tumour);
             wIndicator4 = false;
         }
-        
+
         // update time
         iterations++;
         gensAdded = calculateTime(tumour);
@@ -62,7 +62,7 @@ void runSim(const std::string& input_and_output_path,
             int numGenotypes = tumour.getNumGenotypes();
             int numDemes = tumour.getNumDemes();
             int numCells = tumour.getNumCells();
-            std::cout << "Generations elapsed: " << tumour.getGensElapsed() << std::endl;
+            std::cout << "Generations elapsed: " << tumour.getGensElapsed() << ", Iterations: " << iterations << std::endl;
             std::cout << "Number of cells: " << numCells << std::endl;
             std::cout << "Number of driver genotypes: " << numGenotypes << std::endl;
             std::cout << "Number of demes: " << numDemes << std::endl;
@@ -74,7 +74,7 @@ void runSim(const std::string& input_and_output_path,
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "End of simulation." << std::endl
-    << tumour.getNumDemes() << " demes; " << tumour.getNumCells() << " cells; " 
+    << tumour.getNumDemes() << " demes; " << tumour.getNumCells() << " cells; "
     << tumour.getGensElapsed() << " generations; "
     << tumour.fissionsPerDeme() << " mean fissions per deme." << std::endl;
     std::cout << "Running time: " << elapsed.count() << " seconds." << std::endl;

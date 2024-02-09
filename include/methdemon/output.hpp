@@ -3,7 +3,6 @@
 
 #include "tumour.hpp"
 #include <fstream>
-#include <iostream>
 #include <string>
 
 class FileOutput {
@@ -15,6 +14,7 @@ public:
     ~FileOutput() { file.close(); }
     // Write to file
     void writeDemesFile(Tumour& tumour);
+    void writeCellsFile(Tumour& tumour);
     void writeDemesHeader();
 };
 

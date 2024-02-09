@@ -2,13 +2,9 @@
 #define DEME_HPP
 
 #include "cell.hpp"
-#include "distributions.hpp"
 #include "parameters.hpp"
 
-#include <algorithm>
-#include <iostream>
 #include <string>
-#include <utility>
 #include <vector>
 
 class Deme {
@@ -17,9 +13,10 @@ private:
     int K; // carrying capacity of the deme
     std::string side; // Left or right
     int identity; // Identity of the deme (index in tumour)
+    float originTime;
     // Variable properties
     int population; // Number of cancer cells in the deme
-    std::vector<Cell> cellList; // List of cells in the deme    
+    std::vector<Cell> cellList; // List of cells in the deme
     std::vector<float> avgMethArray; // Average methylation array of the deme
     int fissions; // fissions since the initial deme
     // rates
@@ -36,7 +33,7 @@ public:
     void increment(int increment);
     void calculateAverageArray();
     // Deme events
-    Deme demeFission(bool firstFission=false);
+    Deme demeFission(float originTime, bool firstFission=false);
     void pseudoFission();
     void moveCells(Deme& targetDeme);
     // Cell events
@@ -56,11 +53,13 @@ public:
     float getSumOfRates() const { return sumBirthRates + sumMigRates + population * deathRate; }
     float getCellBirth(int chosenCell) const { return cellList[chosenCell].getBirthRate(); }
     float getCellMig(int chosenCell) const { return cellList[chosenCell].getMigrationRate(); }
+    float getOriginTime() const { return originTime; }
     int getFissions() const { return fissions; }
     std::vector<float> getAverageArray() const { return avgMethArray; }
     // Setters
     void setSide(std::string side) { this->side = side; }
-    void setDeathRate() { this->deathRate = population > K ? baseDeathRate + 10 : baseDeathRate; };
+    void setDeathRate() { this->deathRate = population > K ? baseDeathRate + 10 : baseDeathRate; }
+    void setOriginTime(float originTime) { this->originTime = originTime; }
 };
 
 #endif // DEME_HPP

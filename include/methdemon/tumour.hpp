@@ -2,14 +2,9 @@
 #define TUMOUR_HPP
 
 #include "parameters.hpp"
-#include "distributions.hpp"
 #include "deme.hpp"
 #include "genotype.hpp"
-#include "macros.hpp"
-#include <set>
-#include <functional>
 #include <vector>
-#include <iostream>
 
 class Tumour {
 private:
@@ -23,7 +18,7 @@ private:
     float gensElapsed = 0;
     float outputTimer = 0;
     std::vector<float> fissionTimes;
-    float* nextFissionL = 0;    
+    float* nextFissionL = 0;
     float* nextFissionR = 0;
     int maxGens = 0;
     // sums of rates
