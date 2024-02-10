@@ -1,7 +1,7 @@
 #include "deme.hpp"
 
 /////// Constructor
-Deme::Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float baseDeathRate, float sumBirthRates, float sumMigRates) : K(K), side(side), identity(identity), population(population), fissions(fissions), deathRate(deathRate), baseDeathRate(baseDeathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates) {
+Deme::Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float baseDeathRate, float sumBirthRates, float sumMigRates) : K(K), side(side), identity(identity), population(population), fissions(fissions), deathRate(deathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates), baseDeathRate(baseDeathRate) {
     avgMethArray.clear();
     cellList.clear();
 }

@@ -13,7 +13,7 @@ private:
     int K; // carrying capacity of the deme
     std::string side; // Left or right
     int identity; // Identity of the deme (index in tumour)
-    float originTime;
+    float originTime = 0;
     // Variable properties
     int population; // Number of cancer cells in the deme
     std::vector<Cell> cellList; // List of cells in the deme
