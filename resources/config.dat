@@ -1,6 +1,6 @@
 capacity
 {
-    log2_deme_carrying_capacity 14
+    deme_carrying_capacity 14
 }
 dispersal
 {

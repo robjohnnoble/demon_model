@@ -1,22 +1,22 @@
 capacity
 {
-    log2_deme_carrying_capacity 13
+    deme_carrying_capacity 11
 }
 dispersal
 {
-    init_migration_rate 0.00005
+    init_migration_rate 0.00009
     migration_rate_scales_with_K 1
 }
 mutation
 {
-    mu_driver_birth 0.00001
+    mu_driver_birth 0.0001
     mu_driver_migration 0
 }
 fitness
 {
     normal_birth_rate 0
     baseline_death_rate 0
-    s_driver_birth 0.1
+    s_driver_birth 0.3
     s_driver_migration 0
     max_relative_birth_rate 10
     max_relative_migration_rate 10

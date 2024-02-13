@@ -19,7 +19,7 @@ std::string getInputPath(int argc, char *argv[]) {
 InputParameters readParameters(const boost::property_tree::ptree& pt, const std::string& config_file_path) {
     InputParameters params;
 
-    params.log2_deme_carrying_capacity = pt.get<int>("capacity.log2_deme_carrying_capacity");
+    params.deme_carrying_capacity = pt.get<int>("capacity.deme_carrying_capacity");
 
     params.init_migration_rate = pt.get<float>("dispersal.init_migration_rate");
     params.migration_rate_scales_with_K = pt.get<int>("dispersal.migration_rate_scales_with_K");
