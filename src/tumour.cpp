@@ -10,7 +10,7 @@ Tumour::Tumour(const InputParameters& params,
     genotypes.push_back(firstGenotype);
 
     // demes:
-    Deme firstDeme(d_params.K, "left", 0, 1, 0, params.baseline_death_rate, params.baseline_death_rate, 1, params.init_migration_rate);
+    Deme firstDeme(params.deme_carrying_capacity, "left", 0, 1, 0, params.baseline_death_rate, params.baseline_death_rate, 1, params.init_migration_rate);
     demes.push_back(firstDeme);
     demes.back().initialise(firstGenotype, params, d_params);
 
