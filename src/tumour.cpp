@@ -10,7 +10,7 @@ Tumour::Tumour(const InputParameters& params,
     genotypes.push_back(firstGenotype);
 
     // demes:
-    Deme firstDeme(d_params.K, "left", 0, 1, 0, params.baseline_death_rate, params.baseline_death_rate, 1, params.init_migration_rate);
+    Deme firstDeme(params.deme_carrying_capacity, "left", 0, 1, 0, params.baseline_death_rate, params.baseline_death_rate, 1, params.init_migration_rate);
     demes.push_back(firstDeme);
     demes.back().initialise(firstGenotype, params, d_params);
 
@@ -106,7 +106,7 @@ void Tumour::event(const InputParameters& params) {
                 if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
                     nextFissionL = &fissionTimes[1];
                     nextFissionR = &fissionTimes[4];
-                    demes.push_back(demes[chosenDeme].demeFission(true));
+                    demes.push_back(demes[chosenDeme].demeFission(gensElapsed, true));
                 }
                 else if (chosenSide == "right") {
                     // Check if nextFissionR has reached the end of the array
@@ -114,7 +114,7 @@ void Tumour::event(const InputParameters& params) {
                         demes[chosenDeme].pseudoFission();
                     }
                     else {
-                        demes.push_back(demes[chosenDeme].demeFission());
+                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
                         nextFissionR++;
                     }
                 }
@@ -124,7 +124,7 @@ void Tumour::event(const InputParameters& params) {
                         demes[chosenDeme].pseudoFission();
                     }
                     else {
-                        demes.push_back(demes[chosenDeme].demeFission());
+                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
                         nextFissionL++;
                     }
                 }
@@ -153,7 +153,7 @@ void Tumour::event(const InputParameters& params) {
                 if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
                     nextFissionL = &fissionTimes[1];
                     nextFissionR = &fissionTimes[4];
-                    demes.push_back(demes[chosenDeme].demeFission(true));
+                    demes.push_back(demes[chosenDeme].demeFission(gensElapsed, true));
                 }
                 else if (chosenSide == "right") {
                     // Check if nextFissionR has reached the end of the array
@@ -161,7 +161,7 @@ void Tumour::event(const InputParameters& params) {
                         demes[chosenDeme].pseudoFission();
                     }
                     else {
-                        demes.push_back(demes[chosenDeme].demeFission());
+                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
                         nextFissionR++;
                     }
                 }
@@ -171,7 +171,7 @@ void Tumour::event(const InputParameters& params) {
                         demes[chosenDeme].pseudoFission();
                     }
                     else {
-                        demes.push_back(demes[chosenDeme].demeFission());
+                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
                         nextFissionL++;
                     }
                 }
@@ -179,7 +179,7 @@ void Tumour::event(const InputParameters& params) {
             else {
                 demes[chosenDeme].pseudoFission();
             }
-        } 
+        }
     }
     else {
         std::cout << "Error: invalid event type" << std::endl;

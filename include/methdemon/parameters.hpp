@@ -3,7 +3,7 @@
 
 struct InputParameters {
     // capacity
-    int log2_deme_carrying_capacity;
+    int deme_carrying_capacity;
 
     // dispersal
     float init_migration_rate;
@@ -47,7 +47,7 @@ struct InputParameters {
     // initial conditions
     int init_pop;
     int fission_config;
-    
+
     // output indicators
     int write_demes_file;
     int write_clones_file;

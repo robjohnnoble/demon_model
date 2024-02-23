@@ -1,7 +1,7 @@
 #include "deme.hpp"
 
 /////// Constructor
-Deme::Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float baseDeathRate, float sumBirthRates, float sumMigRates) : K(K), side(side), identity(identity), population(population), fissions(fissions), deathRate(deathRate), baseDeathRate(baseDeathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates) {
+Deme::Deme(int K, std::string side, int identity, int population, int fissions, float deathRate, float baseDeathRate, float sumBirthRates, float sumMigRates) : K(K), side(side), identity(identity), population(population), fissions(fissions), deathRate(deathRate), sumBirthRates(sumBirthRates), sumMigRates(sumMigRates), baseDeathRate(baseDeathRate) {
     avgMethArray.clear();
     cellList.clear();
 }
@@ -27,7 +27,7 @@ void Deme::increment(int increment) {
     int num_clones_in_deme = cellList.size();
     if (population != num_clones_in_deme) {
         std::cout << "ERROR: Population does not equal number of clones in deme." << std::endl
-        << "deme identity: " << identity 
+        << "deme identity: " << identity
         << "; population: " << population << "; num_clones_in_deme: " << num_clones_in_deme << std::endl
         << "; increment: " << increment << std::endl;
         // << "; call origin: " << origin << std::endl;
@@ -50,7 +50,7 @@ void Deme::calculateAverageArray() {
 
 /////// Deme events
 // deme fission - returns new deme
-Deme Deme::demeFission(bool firstFission) {
+Deme Deme::demeFission(float originTime, bool firstFission) {
     fissions++;
     // initialise new deme
     Deme newDeme = Deme(K, side, identity + 1, 0, fissions, 0, baseDeathRate, 0, 0);
@@ -64,6 +64,7 @@ Deme Deme::demeFission(bool firstFission) {
     newDeme.setDeathRate();
     newDeme.calculateSumsOfRates();
     newDeme.calculateAverageArray();
+    newDeme.setOriginTime(originTime);
     return newDeme;
 }
 // pseudo fission - kill half the population randomly
