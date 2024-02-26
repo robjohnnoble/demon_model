@@ -16,7 +16,7 @@ void runSim(const std::string& input_and_output_path,
     // derive derived parameters
     DerivedParameters d_params = deriveParameters(params);
     // initialise output files
-    FileOutput finalDemes(input_and_output_path + "final_demes.txt");
+    FileOutput finalDemes(input_and_output_path + "final_demes.csv");
     finalDemes.writeDemesHeader();
     // initialise tumour
     Tumour tumour(params, d_params);
