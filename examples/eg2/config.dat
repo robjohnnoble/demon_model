@@ -54,7 +54,7 @@ output_indicators
     write_clones_file 1
     write_demes_file 1
 }
-seed
+rng_seed
 {
     seed 15
 }

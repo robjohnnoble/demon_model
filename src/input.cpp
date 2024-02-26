@@ -47,7 +47,7 @@ InputParameters readParameters(const boost::property_tree::ptree& pt, const std:
     params.fCpG_loci_per_cell = pt.get<int>("methylation.fCpG_loci_per_cell");
     params.manual_array = pt.get<float>("methylation.manual_array");
 
-    params.seed = pt.get<int>("seed.seed");
+    params.seed = pt.get<int>("rng_seed.seed");
 
     params.max_time = pt.get<int>("stopping_conditions.max_time");
     params.max_generations = pt.get<int>("stopping_conditions.max_generations");
