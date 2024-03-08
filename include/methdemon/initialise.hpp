@@ -9,6 +9,7 @@
 #include <string>
 
 DerivedParameters deriveParameters(const InputParameters& params);
+int calculateMaxGenerations(float fission_rate, int deme_carrying_capacity);
 // TO DO: files for output - most functions needed
 
 #endif // INITIALISE_HPP

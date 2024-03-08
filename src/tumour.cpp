@@ -14,18 +14,7 @@ Tumour::Tumour(const InputParameters& params,
     demes.push_back(firstDeme);
     demes.back().initialise(firstGenotype, params, d_params);
 
-    // fission times
-    fissionTimes.push_back(params.t0);
-    fissionTimes.push_back(params.tL1);
-    fissionTimes.push_back(params.tL2);
-    fissionTimes.push_back(params.tL3);
-    fissionTimes.push_back(params.tR1);
-    fissionTimes.push_back(params.tR2);
-    fissionTimes.push_back(params.tR3);
-
-    nextFissionL = &fissionTimes[0];
-    nextFissionR = &fissionTimes[4];
-
+    // max gillespie generations to run
     maxGens = params.max_generations;
 
     // fission config
@@ -88,46 +77,18 @@ std::string Tumour::chooseEventType(int chosenDeme, int chosenCell) {
     }
 }
 // perform event
-void Tumour::event(const InputParameters& params) {
+void Tumour::event(const InputParameters& params, const DerivedParameters& d_params) {
     int chosenDeme = chooseDeme();
     int chosenCell = demes[chosenDeme].chooseCell();
     std::string eventType = chooseEventType(chosenDeme, chosenCell);
 
     if (eventType == "birth") {
         demes[chosenDeme].cellDivision(chosenCell, &nextCellID, &nextGenotypeID, gensElapsed, params);
-        // float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
         if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK() &&
             fissionConfig == 1) {
-            // Determine the side of the chosen deme
-            std::string chosenSide = demes[chosenDeme].getSide();
-            // Check if the fission condition is met
-            bool fissionCondition = gensElapsed / static_cast<float>(maxGens) >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
-            if (fissionCondition) {
-                if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
-                    nextFissionL = &fissionTimes[1];
-                    nextFissionR = &fissionTimes[4];
-                    demes.push_back(demes[chosenDeme].demeFission(gensElapsed, true));
-                }
-                else if (chosenSide == "right") {
-                    // Check if nextFissionR has reached the end of the array
-                    if (nextFissionR > &fissionTimes.back()) {
-                        demes[chosenDeme].pseudoFission();
-                    }
-                    else {
-                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
-                        nextFissionR++;
-                    }
-                }
-                else if (chosenSide == "left") {
-                    // Check if nextFissionL has reached fissionTimes[4]
-                    if (nextFissionL >= &fissionTimes[4]) {
-                        demes[chosenDeme].pseudoFission();
-                    }
-                    else {
-                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
-                        nextFissionL++;
-                    }
-                }
+            float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
+            if (rnd <= demes[chosenDeme].getSumMigrationRates() && demes.size() < 8) {
+                demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
             }
             else {
                 demes[chosenDeme].pseudoFission();
@@ -138,47 +99,14 @@ void Tumour::event(const InputParameters& params) {
         demes[chosenDeme].cellDeath(chosenCell);
     }
     else if (eventType == "fission") {
-       if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK()) {
-            // Determine the side of the chosen deme
-            std::string chosenSide = demes[chosenDeme].getSide();
-            // Check if the fission condition is met
-            bool fissionCondition = gensElapsed / static_cast<float>(maxGens) >= (chosenSide == "right" ? *nextFissionR : *nextFissionL);
-            // std::cout << "gensElapsed: " << gensElapsed << std::endl
-            //     << "maxGens: " << maxGens << std::endl
-            //     << "division: " << gensElapsed / static_cast<float>(maxGens) << std::endl
-            //     << "fissionCondition: " << fissionCondition << std::endl
-            //     << "next fission side: " << chosenSide << std::endl
-            //     << "next fission time: " << (chosenSide == "right" ? *nextFissionR : *nextFissionL) << std::endl;
-            if (fissionCondition) {
-                if (nextFissionL == &fissionTimes[0] && chosenSide == "left") {
-                    nextFissionL = &fissionTimes[1];
-                    nextFissionR = &fissionTimes[4];
-                    demes.push_back(demes[chosenDeme].demeFission(gensElapsed, true));
-                }
-                else if (chosenSide == "right") {
-                    // Check if nextFissionR has reached the end of the array
-                    if (nextFissionR > &fissionTimes.back()) {
-                        demes[chosenDeme].pseudoFission();
-                    }
-                    else {
-                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
-                        nextFissionR++;
-                    }
-                }
-                else if (chosenSide == "left") {
-                    // Check if nextFissionL has reached fissionTimes[4]
-                    if (nextFissionL >= &fissionTimes[4]) {
-                        demes[chosenDeme].pseudoFission();
-                    }
-                    else {
-                        demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
-                        nextFissionL++;
-                    }
-                }
-            }
-            else {
-                demes[chosenDeme].pseudoFission();
-            }
+        float fission_weight = 1.0 / 22.0; // 22 is roughly the number of fissions
+                                           // per gland for a tumour with 5x10^6 glands
+        float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
+        if (rnd <= fission_weight && demes.size() < 8) {
+            demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
+        }
+        else {
+            demes[chosenDeme].pseudoFission();
         }
     }
     else {

@@ -24,14 +24,6 @@ InputParameters readParameters(const boost::property_tree::ptree& pt, const std:
     params.init_migration_rate = pt.get<float>("dispersal.init_migration_rate");
     params.migration_rate_scales_with_K = pt.get<int>("dispersal.migration_rate_scales_with_K");
 
-    params.t0 = pt.get<float>("fission_times.t0");
-    params.tL1 = pt.get<float>("fission_times.tL1");
-    params.tL2 = pt.get<float>("fission_times.tL2");
-    params.tL3 = pt.get<float>("fission_times.tL3");
-    params.tR1 = pt.get<float>("fission_times.tR1");
-    params.tR2 = pt.get<float>("fission_times.tR2");
-    params.tR3 = pt.get<float>("fission_times.tR3");
-
     params.normal_birth_rate = pt.get<float>("fitness.normal_birth_rate");
     params.baseline_death_rate = pt.get<float>("fitness.baseline_death_rate");
     params.s_driver_birth = pt.get<float>("fitness.s_driver_birth");

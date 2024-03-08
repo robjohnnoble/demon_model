@@ -66,6 +66,7 @@ struct DerivedParameters {
     int max_driver_genotypes;
     int max_clones;
     int max_demes = 8;
+    int max_generations;
 };
 
 struct EventCounter {
