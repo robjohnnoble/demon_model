@@ -53,7 +53,7 @@ void Deme::calculateAverageArray() {
 Deme Deme::demeFission(float originTime, bool firstFission) {
     fissions++;
     // initialise new deme
-    Deme newDeme = Deme(K, side, identity + 1, 0, fissions, 0, baseDeathRate, 0, 0);
+    Deme newDeme = Deme(K, side, identity + 1, 0, 0, 0, baseDeathRate, 0, 0);
     if (firstFission) newDeme.setSide("right");
     moveCells(newDeme);
     // update origin deme
@@ -137,15 +137,19 @@ int Deme::chooseCell() {
     }
 }
 // cell division
-void Deme::cellDivision(int parentIndex, int* nextCellID, int* nextGenotypeID, float gensElapsed, const InputParameters& params) {
-    Cell& parent = cellList[parentIndex];
-    Cell daughter = Cell((*nextCellID)++, parent.getGenotype(), identity, parent.getNumMeth(), parent.getNumDemeth(), parent.getFCpGs(), parent.getMethArray(), parent.getMethRate(), parent.getDemethRate());
-    parent.methylation();
-    daughter.methylation();
-    parent.mutation(nextGenotypeID, gensElapsed, params);
-    daughter.mutation(nextGenotypeID, gensElapsed, params);
-    cellList.push_back(std::move(daughter));
-    increment(1);
+void Deme::cellDivision(int parentIndex, int *nextCellID, int *nextGenotypeID,
+                        float gensElapsed, const InputParameters &params) {
+  Cell &parent = cellList[parentIndex];
+  Cell daughter =
+      Cell((*nextCellID)++, parent.getGenotype(), identity, parent.getNumMeth(),
+           parent.getNumDemeth(), parent.getFCpGs(), parent.getMethArray(),
+           parent.getMethRate(), parent.getDemethRate());
+  parent.methylation();
+  daughter.methylation();
+  parent.mutation(nextGenotypeID, gensElapsed, params);
+  daughter.mutation(nextGenotypeID, gensElapsed, params);
+  cellList.push_back(std::move(daughter));
+  increment(1);
 }
 // cell death
 void Deme::cellDeath(int cellIndex) {

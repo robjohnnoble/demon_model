@@ -19,15 +19,15 @@ Cell& Cell::operator=(Cell&& other) noexcept {
     return *this;
 }
 // Copy constructor
-Cell::Cell(const Cell& other) 
-    : identity(other.identity), 
+Cell::Cell(const Cell& other)
+    : identity(other.identity),
       genotype(other.genotype),
-      deme(other.deme), 
-      numMeth(other.numMeth), 
-      numDemeth(other.numDemeth), 
-      fcpgs(other.fcpgs), 
+      deme(other.deme),
+      numMeth(other.numMeth),
+      numDemeth(other.numDemeth),
+      fcpgs(other.fcpgs),
       methArray(other.methArray),
-      methRate(other.methRate), 
+      methRate(other.methRate),
       demethRate(other.demethRate) {}
 // Copy assignment operator
 Cell& Cell::operator=(const Cell& other) {
@@ -84,14 +84,20 @@ void Cell::methylation() {
 
 /////// Mutations
 // mutation event
-void Cell::mutation(int* next_genotype_id, float gensElapsed, const InputParameters& params) {
-    int newBirthMut = RandomNumberGenerator::getInstance().poissonDist(genotype->getMuDriverBirth());
-    int newMigMut = RandomNumberGenerator::getInstance().poissonDist(genotype->getMuDriverMig());
+void Cell::mutation(int *next_genotype_id, float gensElapsed,
+                    const InputParameters &params) {
+  int newBirthMut = RandomNumberGenerator::getInstance().poissonDist(
+      genotype->getMuDriverBirth());
+  int newMigMut = RandomNumberGenerator::getInstance().poissonDist(
+      genotype->getMuDriverMig());
 
-    if (newBirthMut || newMigMut) {
-        std::shared_ptr<Genotype> newGenotype = std::make_shared<Genotype>(genotype->getIdentity(), (*next_genotype_id)++, genotype->getNumBirthMut() + newBirthMut, genotype->getNumMigMut() + newMigMut, 0, 0, gensElapsed, params);
-        newGenotype->setBirthRate();
-        newGenotype->setMigrationRate();
-        genotype = newGenotype;
+  if (newBirthMut || newMigMut) {
+    std::shared_ptr<Genotype> newGenotype = std::make_shared<Genotype>(
+        genotype->getIdentity(), (*next_genotype_id)++,
+        genotype->getNumBirthMut() + newBirthMut,
+        genotype->getNumMigMut() + newMigMut, 0, 0, gensElapsed, params);
+    newGenotype->setBirthRate();
+    newGenotype->setMigrationRate();
+    genotype = newGenotype;
     }
 }

@@ -6,11 +6,14 @@ Tumour::Tumour(const InputParameters& params,
     demes.clear();
     genotypes.clear();
     // driver genotypes:
-    std::shared_ptr<Genotype> firstGenotype= std::make_shared<Genotype>(0, 0, 0, 0, 1, params.init_migration_rate, 0, params);
+    std::shared_ptr<Genotype> firstGenotype = std::make_shared<Genotype>(
+        0, 0, 0, 0, 1, params.init_migration_rate, 0, params);
     genotypes.push_back(firstGenotype);
 
     // demes:
-    Deme firstDeme(params.deme_carrying_capacity, "left", 0, 1, 0, params.baseline_death_rate, params.baseline_death_rate, 1, params.init_migration_rate);
+    Deme firstDeme(params.deme_carrying_capacity, "left", 0, 1, 0,
+                   params.baseline_death_rate, params.baseline_death_rate, 1,
+                   params.init_migration_rate);
     demes.push_back(firstDeme);
     demes.back().initialise(firstGenotype, params, d_params);
 
@@ -84,29 +87,33 @@ void Tumour::event(const InputParameters& params, const DerivedParameters& d_par
 
     if (eventType == "birth") {
         demes[chosenDeme].cellDivision(chosenCell, &nextCellID, &nextGenotypeID, gensElapsed, params);
-        if (demes[chosenDeme].getPopulation() >= demes[chosenDeme].getK() &&
-            fissionConfig == 1) {
-            float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
-            if (rnd <= demes[chosenDeme].getSumMigrationRates() && demes.size() < 8) {
-                demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
-            }
-            else {
-                demes[chosenDeme].pseudoFission();
-            }
-        }
     }
     else if (eventType == "death") {
         demes[chosenDeme].cellDeath(chosenCell);
     }
     else if (eventType == "fission") {
-        float fission_weight = 1.0 / 22.0; // 22 is roughly the number of fissions
-                                           // per gland for a tumour with 5x10^6 glands
+        float fission_weight = 1.0 / d_params.fission_modifier;
         float rnd = RandomNumberGenerator::getInstance().unitUnifDist();
-        if (rnd <= fission_weight && demes.size() < 8) {
+        bool rightIndicator = (rightDemes < params.right_demes &&
+                              demes[chosenDeme].getSide() == "right");
+        bool leftIndicator = (leftDemes < params.left_demes &&
+                              demes[chosenDeme].getSide() == "left");
+        bool sideIndicator = (rightIndicator || leftIndicator);
+        if (sideIndicator && rnd <= fission_weight &&
+            demes.size() < d_params.max_demes) {
+          if (demes.size() == 1) {
+            demes.push_back(demes[chosenDeme].demeFission(gensElapsed, true));
+            rightDemes = 1;
+          } else {
             demes.push_back(demes[chosenDeme].demeFission(gensElapsed));
-        }
-        else {
-            demes[chosenDeme].pseudoFission();
+            if (rightIndicator) {
+              rightDemes++;
+            } else if (leftIndicator) {
+              leftDemes++;
+            }
+          }
+        } else {
+          demes[chosenDeme].pseudoFission();
         }
     }
     else {
@@ -133,7 +140,7 @@ int Tumour::getNumCells() const {
     return res;
 }
 // get average number of fissions per deme
-float Tumour::fissionsPerDeme() {
+float Tumour::getFissionsPerDeme() {
     float res = 0;
     for (int i = 0; i < demes.size(); i++) {
         res += demes[i].getFissions();

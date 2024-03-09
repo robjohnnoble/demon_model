@@ -8,15 +8,8 @@ struct InputParameters {
     // dispersal
     float init_migration_rate;
     int migration_rate_scales_with_K;
-
-    // fission times (in numbers of fissions)
-    float t0;
-    float tL1;
-    float tL2;
-    float tL3;
-    float tR1;
-    float tR2;
-    float tR3;
+    int left_demes;
+    int right_demes;
 
     // fitness
     float normal_birth_rate;
@@ -60,13 +53,12 @@ struct DerivedParameters {
     float dmax; // any genotypes that differ by at least this many mutations are considered totally unrelated (i.e. the distance between them is 1)
     int max_bintree_elements=0; // maximum number of bintree elements = max_demes * (1/SET_SIZE + 1/SET_SIZE^2 + ...) < max_demes/(SET_SIZE-1); allow an extra 10% due to rounding up
     int max_bintree_clone_elements_per_deme=0;
-    bool use_clone_bintrees=false; // whether to use clone bintrees: faster for large K, but a waste of memory for small K
     int max_clones_per_deme;
     int max_genotypes;
     int max_driver_genotypes;
     int max_clones;
     int max_demes = 8;
-    int max_generations;
+    float fission_modifier;
 };
 
 struct EventCounter {
