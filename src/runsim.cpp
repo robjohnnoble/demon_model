@@ -21,7 +21,6 @@ void runSim(const std::string& input_and_output_path,
     // initialise tumour
     Tumour tumour(params, d_params);
     // NOTE: Implement event counter eventually (not that important tbh)
-    //EventCounter event_counter;
     std::cout << "Initialised simulation." << std::endl;
     // start timer
     auto start = std::chrono::high_resolution_clock::now();
@@ -36,7 +35,7 @@ void runSim(const std::string& input_and_output_path,
         tumour.setGensElapsed(gensAdded);
         outputTimer += gensAdded;
 
-        // write to stdout every 5 generations
+        // write to stdout and files every 5 generations
         if(outputTimer >= 5) {
             int numGenotypes = tumour.getNumGenotypes();
             int numDemes = tumour.getNumDemes();
@@ -53,6 +52,7 @@ void runSim(const std::string& input_and_output_path,
                       << tumour.getNextGenotypeID()
                       << " genotypes ever created." << std::endl;
             outputTimer = 0;
+            finalDemes.writeDemesFile(tumour);
         }
     }
 

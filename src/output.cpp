@@ -5,9 +5,12 @@ void FileOutput::writeDemesHeader() {
 }
 void FileOutput::writeDemesFile(Tumour& tumour) {
     for (int i = 0; i < tumour.getNumDemes(); i++) {
-        file << tumour.getGensElapsed() << "," << i << "," << tumour.getDeme(i).getSide() << "," << tumour.getDeme(i).getPopulation() << "," << tumour.getDeme(i).getOriginTime() << ",";
-        for (int j = 0; j < tumour.getDeme(i).getAverageArray().size(); j++) {
-            file << tumour.getDeme(i).getAverageArray()[j] << ";";
+      file << tumour.getGensElapsed() << "," << i << ","
+           << tumour.getDeme(i).getSide() << ","
+           << tumour.getDeme(i).getPopulation() << ","
+           << tumour.getDeme(i).getOriginTime() << ",";
+      for (int j = 0; j < tumour.getDeme(i).getAverageArray().size(); j++) {
+        file << tumour.getDeme(i).getAverageArray()[j] << ";";
         }
         file << std::endl;
     }
