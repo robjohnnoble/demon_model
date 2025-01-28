@@ -2541,7 +2541,11 @@ float set_birth_rate(int new_birth_mutations, int new_passengers, float parent_b
 	int i;
 
 	for(i = 0; i < new_passengers; i++) birth_rate = birth_rate / (1 + s_passenger);
-	if(max_relative_birth_rate >= 0) for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * (1 - birth_rate / max_relative_birth_rate) * expdev(idum));
+	if(max_relative_birth_rate >= 0) for(i = 0; i < new_birth_mutations; i++) {
+		birth_rate = birth_rate * (1 + s_driver_birth * (1 - birth_rate / max_relative_birth_rate) * expdev(idum));
+		birth_rate = MIN(birth_rate, max_relative_birth_rate);
+		// otherwise birth_rate > max_relative_birth_rate is possible if s_driver_birth * expdev(idum) > 1
+		}
 	else for(i = 0; i < new_birth_mutations; i++) birth_rate = birth_rate * (1 + s_driver_birth * expdev(idum));
 	
 	if(birth_rate >= baseline_death_rate + density_dept_death_rate) {
