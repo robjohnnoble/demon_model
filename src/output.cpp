@@ -5,6 +5,7 @@ void FileOutput::writeDemesHeader() {
 }
 void FileOutput::writeDemesFile(Tumour& tumour) {
     for (int i = 0; i < tumour.getNumDemes(); i++) {
+      tumour.getDeme(i).calculateAverageArray();
       file << tumour.getGensElapsed() << "," << i << ","
            << tumour.getDeme(i).getSide() << ","
            << tumour.getDeme(i).getPopulation() << ","
