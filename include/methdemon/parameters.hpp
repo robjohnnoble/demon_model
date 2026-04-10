@@ -1,6 +1,8 @@
 #ifndef PARAMETERS_HPP
 #define PARAMETERS_HPP
 
+#include <string>
+
 struct InputParameters {
     // capacity
     int deme_carrying_capacity;
@@ -27,7 +29,7 @@ struct InputParameters {
     float meth_rate;
     float demeth_rate;
     int fCpG_loci_per_cell;
-    float manual_array;
+    std::string manual_array;
 
     // seed
     int seed;

@@ -1,4 +1,6 @@
 #include "cell.hpp"
+#include <fstream>
+#include <sstream>
 
 /////// Constructor
 Cell::Cell(int identity, std::shared_ptr<Genotype> genotype, int deme, int numMeth, int numDemeth, int fcpgs, std::vector<int> methArray, float methRate, float demethRate)
@@ -46,27 +48,33 @@ Cell& Cell::operator=(const Cell& other) {
 
 /////// Methylation array handling
 // generate initial methylation array
-void Cell::initialArray(const float manualArray) {
+void Cell::initialArray(const std::string& manualArray) {
     methArray = std::vector<int>(fcpgs, 0);
-    if(manualArray == -1) {
+    if(manualArray == "-1") {
+        // Random initialisation: each site 0 or 1 with equal probability
         for (int i = 0; i < fcpgs; i++) {
             double rnd = RandomNumberGenerator::getInstance().unitUnifDist();
             rnd > 0.5 ? methArray[i] = 1 : methArray[i] = 0;
         }
     }
     else {
-        for (int i = 0; i < fcpgs * manualArray; i++) {
-            methArray[i] = 0;
+        // Read initial array from file (one int per line)
+        std::ifstream infile(manualArray);
+        if (!infile.is_open()) {
+            std::cerr << "ERROR: Could not open manual_array file: " << manualArray << std::endl;
+            exit(1);
         }
-        for (int i = std::ceil(fcpgs * manualArray); i < fcpgs; i++) {
-            double rnd = RandomNumberGenerator::getInstance().unitUnifDist();
-            rnd > 0.5 ? methArray[i] = 1 : methArray[i] = 0;
+        int val;
+        int i = 0;
+        while (infile >> val && i < fcpgs) {
+            methArray[i] = val;
+            i++;
+        }
+        if (i != fcpgs) {
+            std::cerr << "ERROR: manual_array file has " << i << " values, expected " << fcpgs << std::endl;
+            exit(1);
         }
     }
-    // for (int i = 0; i < fcpgs; i++) {
-    //     std::cout << methArray[i];
-    // }
-    // std::cout << std::endl;
 }
 // methylation event
 void Cell::methylation() {

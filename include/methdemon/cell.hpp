@@ -33,7 +33,7 @@ public:
     // Copy assignment operator
     Cell& operator=(const Cell& other);
     // Methylation array handling
-    void initialArray(const float manualArray);
+    void initialArray(const std::string& manualArray);
     void methylation();
     // Mutations
     void mutation(int* next_genotype_id, float gensElapsed, const InputParameters& params);
